@@ -48,17 +48,16 @@ jobs:
         id: review
         uses: ZedThree/clang-tidy-review@v0.23.1
         with:
-          clang_tidy_version: "18"
-          config_file: ".clang-tidy"
-          build_dir: "build"
-          include: "*.cpp,*.cc,*.cxx"
+          clang_tidy_version: 18
+          config_file: .clang-tidy
+          build_dir: build
           apt_packages: >-
-          libx11-dev,
-          libxrandr-dev,
-          libxinerama-dev,
-          libxcursor-dev,
-          libxi-dev,
-          libxext-dev
+            libx11-dev
+            libxrandr-dev
+            libxinerama-dev
+            libxcursor-dev
+            libxi-dev
+            libxext-dev
           cmake_command: >-
             cmake
             -S .

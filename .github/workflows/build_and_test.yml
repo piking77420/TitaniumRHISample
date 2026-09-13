@@ -1,4 +1,4 @@
-name: Build and Run
+name: Build and Run C++
 
 on:
   push:
@@ -94,7 +94,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
-        submodules: recursive
+        with:
+          submodules: recursive
 
       - name: Configure
         run: >
