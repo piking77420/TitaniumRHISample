@@ -7,4 +7,4 @@
 	url = https://github.com/assimp/assimp.git
 [submodule "ThirdParty/TitaniumRHI"]
 	path = ThirdParty/TitaniumRHI
-	url = git@github.com:piking77420/TitaniumRHI.git
+	url = https://github.com/piking77420/TitaniumRHI.git
