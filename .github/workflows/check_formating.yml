@@ -48,6 +48,7 @@ jobs:
         id: review
         uses: ZedThree/clang-tidy-review@v0.23.1
         with:
+          submodules: recursive
           clang_tidy_version: "18"
           config_file: ".clang-tidy"
           build_dir: "build"
