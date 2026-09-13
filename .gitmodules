@@ -1,0 +1,3 @@
+[submodule "TitaniumRHI"]
+	path = TitaniumRHI
+	url = git@github.com:piking77420/TitaniumRHI.git
