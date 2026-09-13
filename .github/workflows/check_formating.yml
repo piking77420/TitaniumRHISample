@@ -52,11 +52,23 @@ jobs:
           config_file: ".clang-tidy"
           build_dir: "build"
           include: "*.cpp,*.cc,*.cxx"
+          apt_packages: >-
+          libx11-dev,
+          libxrandr-dev,
+          libxinerama-dev,
+          libxcursor-dev,
+          libxi-dev,
+          libxext-dev
           cmake_command: >-
             cmake
             -S .
             -B build
             -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+            -DGLFW_BUILD_WAYLAND=OFF
+            -DGLFW_BUILD_X11=ON
+            -DGLFW_BUILD_EXAMPLES=OFF
+            -DGLFW_BUILD_TESTS=OFF
+            -DGLFW_BUILD_DOCS=OFF
 
       - name: Upload clang-tidy results
         if: always()
