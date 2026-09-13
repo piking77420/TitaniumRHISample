@@ -1,9 +1,10 @@
-[submodule "TitaniumRHI"]
-	path = ThirdParty/TitaniumRHI
-	url = git@github.com:piking77420/TitaniumRHI.git
-[submodule "glfw"]
+
+[submodule "ThirdParty/glfw"]
 	path = ThirdParty/glfw
 	url = https://github.com/glfw/glfw.git
-[submodule "assimp"]
+[submodule "ThirdParty/assimp"]
 	path = ThirdParty/assimp
 	url = https://github.com/assimp/assimp.git
+[submodule "ThirdParty/TitaniumRHI"]
+	path = ThirdParty/TitaniumRHI
+	url = git@github.com:piking77420/TitaniumRHI.git
