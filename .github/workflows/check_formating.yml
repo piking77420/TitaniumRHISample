@@ -41,6 +41,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Run clang-tidy
         id: review
@@ -55,8 +57,6 @@ jobs:
             -S .
             -B build
             -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-            -DBUILD_UNIT_TEST=ON
-            -DBUILD_BENCHMARK=ON
 
       - name: Upload clang-tidy results
         if: always()

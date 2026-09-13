@@ -1,4 +1,4 @@
-name: Build and Test C/C++ Code
+name: Build and Run
 
 on:
   push:
@@ -19,13 +19,7 @@ jobs:
           # Linux x64 GCC
           # ============================================================
 
-          - name: Linux x64 GCC Default
-            os: ubuntu-24.04
-            build_type: Release
-            configure_args: >-
-              -DCMAKE_CXX_COMPILER=g++
-
-          - name: Linux x64 GCC AVX2
+          - name: Linux x64 GCC
             os: ubuntu-24.04
             build_type: Release
             configure_args: >-
@@ -36,13 +30,7 @@ jobs:
           # Linux x64 Clang
           # ============================================================
 
-          - name: Linux x64 Clang Default
-            os: ubuntu-24.04
-            build_type: Release
-            configure_args: >-
-              -DCMAKE_CXX_COMPILER=clang++
-
-          - name: Linux x64 Clang AVX2
+          - name: Linux x64 Clang
             os: ubuntu-24.04
             build_type: Release
             configure_args: >-
@@ -53,30 +41,17 @@ jobs:
           # Linux ARM64 GCC
           # ============================================================
 
-          - name: Linux ARM64 GCC Default
+          - name: Linux ARM64 GCC
             os: ubuntu-24.04-arm
             build_type: Release
             configure_args: >-
               -DCMAKE_CXX_COMPILER=g++
-
-          - name: Linux ARM64 GCC NEON
-            os: ubuntu-24.04-arm
-            build_type: Release
-            configure_args: >-
-              -DCMAKE_CXX_COMPILER=g++
-
 
           # ============================================================
           # Linux ARM64 Clang
           # ============================================================
 
           - name: Linux ARM64 Clang Default
-            os: ubuntu-24.04-arm
-            build_type: Release
-            configure_args: >-
-              -DCMAKE_CXX_COMPILER=clang++
-
-          - name: Linux ARM64 Clang NEON
             os: ubuntu-24.04-arm
             build_type: Release
             configure_args: >-
@@ -93,14 +68,6 @@ jobs:
               -G "Visual Studio 18 2026"
               -A x64
 
-          - name: Windows x64 MSVC AVX2
-            os: windows-2025
-            build_type: Release
-            configure_args: >-
-              -G "Visual Studio 18 2026"
-              -A x64
-
-
           # ============================================================
           # Windows x64 ClangCL
           # ============================================================
@@ -113,25 +80,11 @@ jobs:
               -A x64
               -T ClangCL
 
-          - name: Windows x64 ClangCL AVX2
-            os: windows-2025
-            build_type: Release
-            configure_args: >-
-              -G "Visual Studio 18 2026"
-              -A x64
-              -T ClangCL
-
           # ============================================================
           # Mac OS
           # ============================================================
           - name: macOS ARM64 Clang Default
             os: macos-26
-            build_type: Release
-            configure_args: >-
-              -G "Ninja"
-
-          - name: macOS x64 Clang Default
-            os: macos-26-intel
             build_type: Release
             configure_args: >-
               -G "Ninja"
