@@ -1,3 +1,6 @@
 [submodule "TitaniumRHI"]
 	path = TitaniumRHI
 	url = git@github.com:piking77420/TitaniumRHI.git
+[submodule "glfw"]
+	path = glfw
+	url = https://github.com/glfw/glfw.git
