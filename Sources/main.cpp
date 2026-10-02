@@ -7,6 +7,7 @@
 
 constexpr size_t WindowWidthBaseSize = 1280;
 constexpr size_t WindowHeightBaseSize = 720;
+constexpr float clearColor[4]{0.1f, 0.2f, 0.4f, 1.0f};
 using namespace std::literals;
 
 static constexpr std::wstring_view AnsiReset = L"\x1b[0m"sv;
@@ -76,13 +77,15 @@ int main()
         if (!window.beginFrame())
             continue;
 
+        if (cmdList.beginRecord())
         {
-            cmdList.beginRecord();
             cmdList.endRecord();
         }
-
+        device.submit(cmdList);
         window.endFrame(device);
     }
+
+    device.wait();
 
     return 0;
 }
