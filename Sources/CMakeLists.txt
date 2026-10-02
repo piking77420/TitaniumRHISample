@@ -4,6 +4,8 @@ project(Renderer VERSION 0.1.0 LANGUAGES CXX)
 
 set(RENDERER_SOURCES
     main.cpp
+    Window.cpp
+    Window.hpp
 )
 
 add_executable(
@@ -11,7 +13,14 @@ add_executable(
     ${RENDERER_SOURCES}
 )
 
+target_include_directories(
+    ${PROJECT_NAME}
+    PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}"
+)
+
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
         glfw
+        TitaniumRHI
 )

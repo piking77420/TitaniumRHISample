@@ -1,58 +1,88 @@
 #include <iostream>
 
+#include <string>
+#include <string_view>
 #include <GLFW/glfw3.h>
+#include <Window.hpp>
 
 constexpr size_t WindowWidthBaseSize = 1280;
 constexpr size_t WindowHeightBaseSize = 720;
+using namespace std::literals;
 
-struct WindowData
-{
-    bool resized = false;
-    int width = 0;
-    int height = 0;
-};
+static constexpr std::wstring_view AnsiReset = L"\x1b[0m"sv;
+static constexpr std::wstring_view AnsiBlack = L"\x1b[30m"sv;
+static constexpr std::wstring_view AnsiRed = L"\x1b[31m"sv;
+static constexpr std::wstring_view AnsiGreen = L"\x1b[32m"sv;
+static constexpr std::wstring_view AnsiYellow = L"\x1b[33m"sv;
+static constexpr std::wstring_view AnsiOrange = L"\x1b[38;2;255;165;0m"sv;
+static constexpr std::wstring_view AnsiBlue = L"\x1b[34m"sv;
+static constexpr std::wstring_view AnsiMagenta = L"\x1b[35m"sv;
+static constexpr std::wstring_view AnsiCyan = L"\x1b[36m"sv;
+static constexpr std::wstring_view AnsiWhite = L"\x1b[37m"sv;
+static constexpr std::wstring_view AnsiGrey = L"\x1b[90m"sv;
+static constexpr std::wstring_view AnsiBrightRed = L"\x1b[91m"sv;
+static constexpr std::wstring_view AnsiBrightGreen = L"\x1b[92m"sv;
+static constexpr std::wstring_view AnsiBrightYellow = L"\x1b[93m"sv;
+static constexpr std::wstring_view AnsiBrightBlue = L"\x1b[94m"sv;
+static constexpr std::wstring_view AnsiBrightMagenta = L"\x1b[95m"sv;
+static constexpr std::wstring_view AnsiBrightCyan = L"\x1b[96m"sv;
+static constexpr std::wstring_view AnsiBrightWhite = L"\x1b[97m"sv;
 
-void framebufferResizeCallback(GLFWwindow* window, int width, int height)
+void debugCallBack(const std::wstring& message, TiRHI::RhiApi api, TiRHI::RhiMessageSeverity severity)
 {
-    auto* data = static_cast<WindowData*>(glfwGetWindowUserPointer(window));
-    data->resized = true;
-    data->width = width;
-    data->height = height;
+    auto getColor = [&severity]() -> std::wstring_view
+    {
+        switch (severity)
+        {
+        case TiRHI::RhiMessageSeverity::Verbose:
+            return AnsiReset;
+        case TiRHI::RhiMessageSeverity::Info:
+            return AnsiGrey;
+        case TiRHI::RhiMessageSeverity::Warning:
+            return AnsiOrange;
+        case TiRHI::RhiMessageSeverity::Error:
+            return AnsiRed;
+        case TiRHI::RhiMessageSeverity::Fatal:
+            return AnsiMagenta;
+        }
+
+        return AnsiReset;
+    };
+
+    std::wcout << std::format(L"[RHI][{}]{}[{}]{}[{}]\n", TiRHI::toWstring(api), getColor(), TiRHI::toWstring(severity),
+                              AnsiReset, message);
 }
 
 int main()
 {
-    if (!glfwInit())
+    TiRHI::RHI rhi(TiRHI::RhiCreate{.frameInFlight = 2, .logCallback = debugCallBack});
+    TiRHI::Device device = rhi.newDevice();
+    // clang-format off
+    device.setName("BaseDevice")
+          .build(rhi, rhi.getAdapters());
+    // clang-format 
+    TiSample::Io::Window window(WindowWidthBaseSize, WindowHeightBaseSize, rhi, device);
+
+    TiRHI::CommandList cmdList(rhi);
+    // clang-format off
+    cmdList
+        .setName("CommandList");
+    cmdList.build(device);
+    // clang-format on
+
+    while (!window.shouldClose())
     {
-        std::cerr << "Failed to initialize GLFW\n";
-        return -1;
+        window.poolEvent();
+        if (!window.beginFrame())
+            continue;
+
+        {
+            cmdList.beginRecord();
+            cmdList.endRecord();
+        }
+
+        window.endFrame(device);
     }
-
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-
-    WindowData windowData;
-
-    windowData.width = static_cast<int>(WindowWidthBaseSize);
-    windowData.height = static_cast<int>(WindowWidthBaseSize);
-
-    GLFWwindow* window = glfwCreateWindow(windowData.width, windowData.height, "TitaniumRHISample", nullptr, nullptr);
-
-    if (!window)
-    {
-        std::cerr << "Failed to create GLFW window\n";
-        glfwTerminate();
-        return -1;
-    }
-
-    glfwSetWindowUserPointer(window, &windowData);
-    glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
-    while (!glfwWindowShouldClose(window))
-    {
-        glfwPollEvents();
-    }
-
-    glfwDestroyWindow(window);
-    glfwTerminate();
 
     return 0;
 }
