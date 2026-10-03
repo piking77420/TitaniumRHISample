@@ -4,7 +4,9 @@
 #include <string_view>
 #include <GLFW/glfw3.h>
 #include <Window.hpp>
+#include <Titanium/TitaniumHeader.hpp>
 
+constexpr size_t imageCount = 3;
 constexpr size_t WindowWidthBaseSize = 1280;
 constexpr size_t WindowHeightBaseSize = 720;
 constexpr float clearColor[4]{0.1f, 0.2f, 0.4f, 1.0f};
@@ -56,13 +58,34 @@ void debugCallBack(const std::wstring& message, TiRHI::RhiApi api, TiRHI::RhiMes
 
 int main()
 {
+    TiSample::Io::Window window(WindowWidthBaseSize, WindowHeightBaseSize);
+
     TiRHI::RHI rhi(TiRHI::RhiCreate{.frameInFlight = 2, .logCallback = debugCallBack});
+
+    // clang-format off
+    TiRHI::Surface surface(rhi);
+    surface
+        .setName("WindowSurface")
+        .build(window.getWindowHandle());
+    // clang-format on
+
     TiRHI::Device device = rhi.newDevice();
     // clang-format off
-    device.setName("BaseDevice")
-          .build(rhi, rhi.getAdapters());
+    device.setName("My Device")
+          .build(rhi, surface, rhi.getAdapters());
     // clang-format 
-    TiSample::Io::Window window(WindowWidthBaseSize, WindowHeightBaseSize, rhi, device);
+
+    // clang-format off
+    TiRHI::SwapChain swapChain(rhi);
+    swapChain
+        .setWidth(static_cast<uint32_t>(window.getWidth()))
+        .setHeight(static_cast<uint32_t>(window.getWidth()))
+        .setName("SwapChain")
+        .setVsync(true)
+        .setImageCount(imageCount)
+        .build(device, surface);
+    // clang-format 
+
 
     TiRHI::CommandList cmdList(rhi);
     // clang-format off
@@ -73,8 +96,15 @@ int main()
 
     while (!window.shouldClose())
     {
-        window.poolEvent();
-        if (!window.beginFrame())
+        window.pollEvents();
+        if (window.resized())
+        {
+            device.wait();
+            swapChain.setWidth(window.getWidth()).setHeight(window.getHeight());
+            swapChain.recreateSwapChain(device, surface);
+        }
+
+        if (!swapChain.beginFrame())
             continue;
 
         if (cmdList.beginRecord())
@@ -82,7 +112,8 @@ int main()
             cmdList.endRecord();
         }
         device.submit(cmdList);
-        window.endFrame(device);
+        swapChain.present(device);
+        rhi.nextFrame();
     }
 
     device.wait();
