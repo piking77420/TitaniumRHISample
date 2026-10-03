@@ -1,8 +1,8 @@
 #ifndef TI_SAMPLE_IO_WINDOW_H
 #define TI_SAMPLE_IO_WINDOW_H
 
-#include <Titanium/TitaniumHeader.hpp>
 #include <GLFW/glfw3.h>
+#include <Titanium/TitaniumHeader.hpp>
 
 namespace TiSample::Io
 {
@@ -11,21 +11,33 @@ namespace TiSample::Io
     public:
         Window() = delete;
         ~Window();
-        Window(int witdh, int height, TiRHI::RHI& rhi, TiRHI::Device& device);
+        Window(int witdh, int height);
+
+        int getWidth() const
+        {
+            return m_width;
+        }
+
+        int getHeight() const
+        {
+            return m_height;
+        }
+
+        bool resized() const
+        {
+            return m_resized;
+        }
 
         bool shouldClose();
-        void poolEvent();
+        void pollEvents();
 
-        bool beginFrame();
-        void endFrame(TiRHI::Device& device);
+        TiRHI::WindowHandle getWindowHandle() const;
 
     private:
         int m_width = 0;
         int m_height = 0;
         bool m_resized = false;
         GLFWwindow* m_window{nullptr};
-
-        TiRHI::SwapChain m_swapChain;
 
         static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
     };

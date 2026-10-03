@@ -22,10 +22,9 @@ namespace TiSample::Io
         glfwTerminate();
     }
 
-    Window::Window(int witdh, int height, TiRHI::RHI& rhi, TiRHI::Device& device)
+    Window::Window(int witdh, int height)
         : m_width(witdh)
         , m_height(height)
-        , m_swapChain(rhi.newSwapChain())
     {
         glfwInit();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -38,13 +37,6 @@ namespace TiSample::Io
         }
         glfwSetWindowUserPointer(m_window, this);
         glfwSetFramebufferSizeCallback(m_window, framebufferResizeCallback);
-        // clang-format off
-        m_swapChain.setWidth(m_width)
-            .setHeight(m_height)
-            .setVsync(true)
-            .setName("SwapChain")
-            .build(device,  glfwGetWin32Window(m_window));
-        // clang-format on
     }
 
     bool Window::shouldClose()
@@ -52,18 +44,14 @@ namespace TiSample::Io
         return glfwWindowShouldClose(m_window);
     }
 
-    void Window::poolEvent()
+    void Window::pollEvents()
     {
+        m_resized = false;
         glfwPollEvents();
     }
 
-    bool Window::beginFrame()
+    TiRHI::WindowHandle Window::getWindowHandle() const
     {
-        return m_swapChain.beginFrame();
-    }
-
-    void Window::endFrame(TiRHI::Device& device)
-    {
-        m_swapChain.present(device);
+        return TiRHI::WindowHandle(glfwGetWin32Window(m_window));
     }
 }
