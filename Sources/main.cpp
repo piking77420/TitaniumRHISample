@@ -1,11 +1,13 @@
 #include <iostream>
 #include <print>
 
+#include <format>
 #include <string>
 #include <string_view>
 #include <GLFW/glfw3.h>
 #include <Window.hpp>
 #include <Titanium/TitaniumHeader.hpp>
+#include <Titanium/RHI-DebugScope.hpp>
 
 constexpr int MaxAppInstanceCount = 100;
 constexpr size_t imageCount = 3;
@@ -130,40 +132,45 @@ public:
 
         if (m_cmdList.beginRecord())
         {
+            {
+                TiRHI::DebugScope _(m_cmdList, "SwapChain Pass"sv, std::array{1.0f, 1.0f, 0.0f, 1.0f});
 #if defined(TITANIUM_VULKAN) // need to use render pass in order to avoid validation layer message
-            vk::RenderPassBeginInfo renderPassBeginInfo{};
-            vk::ClearColorValue clearColorValue;
-            clearColorValue.setFloat32(clearColor);
-            vk::ClearValue clearValue{};
-            clearValue.setColor(clearColorValue);
-            renderPassBeginInfo.setRenderPass(m_swapChain.getNativeRenderPass())
-                .setFramebuffer(m_swapChain.getNativeFrameBuffer())
-                .setRenderArea(
-                    {{0, 0}, {static_cast<uint32_t>(m_window.getWidth()), static_cast<uint32_t>(m_window.getHeight())}})
-                .setClearValues(clearValue);
 
-            m_cmdList.getcurrentFrameCmb().beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
-            m_cmdList.getcurrentFrameCmb().endRenderPass();
+                vk::RenderPassBeginInfo renderPassBeginInfo{};
+                vk::ClearColorValue clearColorValue;
+                clearColorValue.setFloat32(clearColor);
+                vk::ClearValue clearValue{};
+                clearValue.setColor(clearColorValue);
+                renderPassBeginInfo.setRenderPass(m_swapChain.getNativeRenderPass())
+                    .setFramebuffer(m_swapChain.getNativeFrameBuffer())
+                    .setRenderArea(
+                        {{0, 0},
+                         {static_cast<uint32_t>(m_window.getWidth()), static_cast<uint32_t>(m_window.getHeight())}})
+                    .setClearValues(clearValue);
+
+                m_cmdList.getcurrentFrameCmb().beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
+                m_cmdList.getcurrentFrameCmb().endRenderPass();
 #endif
 
 #if defined(TITANIUM_DIRECT_X12)
-            D3D12_RESOURCE_BARRIER barrier{};
-            barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-            barrier.Transition.pResource = m_swapChain.getNativeCurrentBackBuffer();
-            barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-            barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-            barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-            auto nativeCml = m_cmdList.getCommandListNative();
-            nativeCml->ResourceBarrier(1, &barrier);
+                D3D12_RESOURCE_BARRIER barrier{};
+                barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+                barrier.Transition.pResource = m_swapChain.getNativeCurrentBackBuffer();
+                barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+                barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+                barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+                auto nativeCml = m_cmdList.getCommandListNative();
+                nativeCml->ResourceBarrier(1, &barrier);
 
-            auto rtv = m_swapChain.getRtv();
-            nativeCml->OMSetRenderTargets(1, &rtv, FALSE, nullptr);
+                auto rtv = m_swapChain.getRtv();
+                nativeCml->OMSetRenderTargets(1, &rtv, FALSE, nullptr);
 
-            nativeCml->ClearRenderTargetView(rtv, clearColor.data(), 0, nullptr);
-            std::swap(barrier.Transition.StateBefore, barrier.Transition.StateAfter);
+                nativeCml->ClearRenderTargetView(rtv, clearColor.data(), 0, nullptr);
+                std::swap(barrier.Transition.StateBefore, barrier.Transition.StateAfter);
 
-            nativeCml->ResourceBarrier(1, &barrier);
+                nativeCml->ResourceBarrier(1, &barrier);
 #endif
+            }
 
             m_cmdList.endRecord();
         }
@@ -217,7 +224,7 @@ int main()
     std::cin >> openApps;
     openApps = std::clamp(openApps, 0, MaxAppInstanceCount);
 
-    TiRHI::RHI rhi(TiRHI::RhiCreate{.frameInFlight = 2, .logCallback = debugCallBack});
+    TiRHI::RHI rhi(TiRHI::RhiCreate{.useDebugLabel = true, .frameInFlight = 2, .logCallback = debugCallBack});
 
     TiRHI::Device device = rhi.newDevice();
 
@@ -240,18 +247,25 @@ int main()
             app->prepareForCurrentFrame();
 
         io.queryEvents();
-        for (auto it = apps.begin(); it != apps.end();)
-        {
-            if ((*it)->shouldClose())
-            {
-                device.wait();
-                it = apps.erase(it);
-                continue;
-            }
+        bool needWait = false;
 
-            (*it)->handleResize(device);
-            ++it;
+        for (const auto& app : apps)
+        {
+            if (app->shouldClose())
+            {
+                needWait = true;
+                break;
+            }
         }
+
+        if (needWait)
+        {
+            device.wait();
+            std::erase_if(apps, [](const auto& app) { return app->shouldClose(); });
+        }
+
+        for (auto& app : apps)
+            app->handleResize(device);
 
         device.beginFrame();
 
