@@ -37,12 +37,12 @@ namespace TiSample::Io
         glfwSetFramebufferSizeCallback(m_window, framebufferResizeCallback);
     }
 
-    bool Window::shouldClose()
+    bool Window::shouldClose() const
     {
         return glfwWindowShouldClose(m_window);
     }
 
-    void Window::pollEvents()
+    void Window::prepareForCurrentFrame()
     {
         m_resized = false;
     }

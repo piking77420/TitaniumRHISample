@@ -7,6 +7,7 @@
 #include <Window.hpp>
 #include <Titanium/TitaniumHeader.hpp>
 
+constexpr int MaxAppInstanceCount = 100;
 constexpr size_t imageCount = 3;
 constexpr size_t WindowWidthBaseSize = 1280;
 constexpr size_t WindowHeightBaseSize = 720;
@@ -78,64 +79,56 @@ public:
 private:
 };
 
-int main()
+class App
 {
-    Io io;
-
-    TiSample::Io::Window window(WindowWidthBaseSize, WindowHeightBaseSize);
-
-    TiRHI::RHI rhi(TiRHI::RhiCreate{.frameInFlight = 2, .logCallback = debugCallBack});
-
-    // clang-format off
-    TiRHI::Surface surface(rhi);
-    surface
-        .setName("WindowSurface")
-        .build(window.getWindowHandle());
-    // clang-format on
-
-    TiRHI::Device device = rhi.newDevice();
-    // clang-format off
-    device.setName("My Device")
-          .build(rhi, surface, rhi.getAdapters());
-    // clang-format 
-
-    
-    std::println("Device Choosen : {}", device.getSourceAdapter(rhi).getName());
-
-    // clang-format off
-    TiRHI::SwapChain swapChain(rhi);
-    swapChain
-        .setWidth(static_cast<uint32_t>(window.getWidth()))
-        .setHeight(static_cast<uint32_t>(window.getWidth()))
-        .setName("SwapChain")
-        .setVsync(true)
-        .setImageCount(imageCount)
-        .build(device, surface);
-    // clang-format 
-
-
-    TiRHI::CommandList cmdList(rhi);
-    // clang-format off
-    cmdList
-        .setName("CommandList");
-    cmdList.build(device);
-    // clang-format on
-
-    while (!window.shouldClose())
+public:
+    App(TiRHI::RHI& rhi, TiRHI::Device& device)
+        : m_window(WindowWidthBaseSize, WindowHeightBaseSize)
+        , m_surface(rhi)
+        , m_swapChain(rhi)
+        , m_cmdList(rhi)
     {
-        io.queryEvents();
-        if (window.resized())
+        // clang-format off
+        
+        m_surface
+            .setName("WindowSurface")
+            .build(m_window.getWindowHandle());
+        // clang-format on
+
+        if (!device.isValid())
         {
-            device.wait();
-            swapChain.setWidth(window.getWidth()).setHeight(window.getHeight());
-            swapChain.recreateSwapChain(device, surface);
+            // clang-format off
+            device.setName("My Device")
+                  .build(rhi, m_surface, rhi.getAdapters());
+            // clang-format 
         }
 
-        const TiRHI::AcquiredFrame acquireFrame = swapChain.beginFrame();
-        if (!acquireFrame.getSucces())
-            continue;
+         // clang-format off
+         m_swapChain
+            .setWidth(static_cast<uint32_t>(m_window.getWidth()))
+            .setHeight(static_cast<uint32_t>(m_window.getHeight()))
+            .setName("SwapChain")
+            .setVsync(true)
+            .setImageCount(imageCount)
+            .build(device, m_surface);
+         // clang-format 
 
-        if (cmdList.beginRecord())
+            // clang-format off
+            m_cmdList
+                .setName("CommandList");
+            m_cmdList.build(device);
+        // clang-format on
+    }
+    ~App() = default;
+
+    std::pair<TiRHI::AcquiredFrame, TiRHI::CommandList*> render()
+    {
+        const TiRHI::AcquiredFrame acquireFrame = m_swapChain.acquireNextImage();
+        if (!acquireFrame.getSucces())
+            return std::pair<TiRHI::AcquiredFrame, TiRHI::CommandList*>(acquireFrame, nullptr);
+        ;
+
+        if (m_cmdList.beginRecord())
         {
 #if defined(TITANIUM_VULKAN) // need to use render pass in order to avoid validation layer message
             vk::RenderPassBeginInfo renderPassBeginInfo{};
@@ -143,14 +136,14 @@ int main()
             clearColorValue.setFloat32(clearColor);
             vk::ClearValue clearValue{};
             clearValue.setColor(clearColorValue);
-            renderPassBeginInfo.setRenderPass(swapChain.getNativeRenderPass())
-                .setFramebuffer(swapChain.getNativeFrameBuffer())
+            renderPassBeginInfo.setRenderPass(m_swapChain.getNativeRenderPass())
+                .setFramebuffer(m_swapChain.getNativeFrameBuffer())
                 .setRenderArea(
-                    {{0, 0}, {static_cast<uint32_t>(window.getWidth()), static_cast<uint32_t>(window.getHeight())}})
+                    {{0, 0}, {static_cast<uint32_t>(m_window.getWidth()), static_cast<uint32_t>(m_window.getHeight())}})
                 .setClearValues(clearValue);
 
-            cmdList.getcurrentFrameCmb().beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
-            cmdList.getcurrentFrameCmb().endRenderPass();
+            m_cmdList.getcurrentFrameCmb().beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
+            m_cmdList.getcurrentFrameCmb().endRenderPass();
 #endif
 
 #if defined(TITANIUM_DIRECT_X12)
@@ -172,10 +165,109 @@ int main()
             nativeCml->ResourceBarrier(1, &barrier);
 #endif
 
-            cmdList.endRecord();
+            m_cmdList.endRecord();
         }
-        device.submit(acquireFrame, cmdList);
-        swapChain.present();
+
+        return std::pair<TiRHI::AcquiredFrame, TiRHI::CommandList*>(acquireFrame, &m_cmdList);
+    }
+
+    void swapBuffer()
+    {
+        m_swapChain.present();
+    }
+
+    void handleResize(TiRHI::Device& device)
+    {
+        if (!m_window.resized())
+        {
+            return;
+        }
+
+        device.wait();
+        m_swapChain.setWidth(m_window.getWidth()).setHeight(m_window.getHeight());
+        m_swapChain.recreateSwapChain(device, m_surface);
+    }
+
+    void prepareForCurrentFrame()
+    {
+        m_window.prepareForCurrentFrame();
+    }
+
+    bool shouldClose() const
+    {
+        return m_window.shouldClose();
+    }
+
+private:
+    TiSample::Io::Window m_window;
+
+    TiRHI::Surface m_surface;
+
+    TiRHI::SwapChain m_swapChain;
+
+    TiRHI::CommandList m_cmdList;
+};
+
+int main()
+{
+    std::println("Number of Instance ? ");
+
+    int openApps;
+    Io io;
+    std::cin >> openApps;
+    openApps = std::clamp(openApps, 0, MaxAppInstanceCount);
+
+    TiRHI::RHI rhi(TiRHI::RhiCreate{.frameInFlight = 2, .logCallback = debugCallBack});
+
+    TiRHI::Device device = rhi.newDevice();
+
+    std::println("Device Choosen : {}", device.getSourceAdapter(rhi).getName());
+
+    std::vector<std::unique_ptr<App>> apps;
+
+    for (size_t i = 0; i < static_cast<size_t>(openApps); i++)
+    {
+        apps.emplace_back(std::make_unique<App>(rhi, device));
+    }
+    std::vector<TiRHI::AcquiredFrame> acquiredFrames;
+    std::vector<TiRHI::CommandList*> commandLists;
+
+    while (!apps.empty())
+    {
+        acquiredFrames.clear();
+        commandLists.clear();
+        for (auto& app : apps)
+            app->prepareForCurrentFrame();
+
+        io.queryEvents();
+        for (auto it = apps.begin(); it != apps.end();)
+        {
+            if ((*it)->shouldClose())
+            {
+                device.wait();
+                it = apps.erase(it);
+                continue;
+            }
+
+            (*it)->handleResize(device);
+            ++it;
+        }
+
+        device.beginFrame();
+
+        for (auto& app : apps)
+        {
+            auto tickOut = app->render();
+            if (tickOut.first.getSucces() && tickOut.second != nullptr)
+            {
+                acquiredFrames.emplace_back(tickOut.first);
+                commandLists.emplace_back(tickOut.second);
+            }
+        }
+
+        device.submit(acquiredFrames, commandLists);
+        for (auto& app : apps)
+            app->swapBuffer();
         rhi.nextFrame();
     }
 
