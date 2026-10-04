@@ -28,8 +28,8 @@ namespace TiSample::Io
             return m_resized;
         }
 
-        bool shouldClose();
-        void pollEvents();
+        bool shouldClose() const;
+        void prepareForCurrentFrame();
 
         TiRHI::WindowHandle getWindowHandle() const;
 
