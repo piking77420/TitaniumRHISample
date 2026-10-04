@@ -19,14 +19,12 @@ namespace TiSample::Io
     Window::~Window()
     {
         glfwDestroyWindow(m_window);
-        glfwTerminate();
     }
 
     Window::Window(int witdh, int height)
         : m_width(witdh)
         , m_height(height)
     {
-        glfwInit();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         m_window = glfwCreateWindow(m_width, height, "TitaniumRHISample", nullptr, nullptr);
         if (!m_window)
@@ -47,7 +45,6 @@ namespace TiSample::Io
     void Window::pollEvents()
     {
         m_resized = false;
-        glfwPollEvents();
     }
 
     TiRHI::WindowHandle Window::getWindowHandle() const
