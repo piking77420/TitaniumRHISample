@@ -149,14 +149,14 @@ public:
 #if defined(TITANIUM_DIRECT_X12)
             D3D12_RESOURCE_BARRIER barrier{};
             barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-            barrier.Transition.pResource = swapChain.getNativeCurrentBackBuffer();
+            barrier.Transition.pResource = m_swapChain.getNativeCurrentBackBuffer();
             barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
             barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
             barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-            auto nativeCml = cmdList.getCommandListNative();
+            auto nativeCml = m_cmdList.getCommandListNative();
             nativeCml->ResourceBarrier(1, &barrier);
 
-            auto rtv = swapChain.getRtv();
+            auto rtv = m_swapChain.getRtv();
             nativeCml->OMSetRenderTargets(1, &rtv, FALSE, nullptr);
 
             nativeCml->ClearRenderTargetView(rtv, clearColor.data(), 0, nullptr);
