@@ -1,4 +1,5 @@
 #include <iostream>
+#include <print>
 
 #include <string>
 #include <string_view>
@@ -9,7 +10,7 @@
 constexpr size_t imageCount = 3;
 constexpr size_t WindowWidthBaseSize = 1280;
 constexpr size_t WindowHeightBaseSize = 720;
-constexpr float clearColor[4]{0.1f, 0.2f, 0.4f, 1.0f};
+constexpr std::array clearColor{0.1f, 0.2f, 0.4f, 1.0f};
 using namespace std::literals;
 
 static constexpr std::wstring_view AnsiReset = L"\x1b[0m"sv;
@@ -75,6 +76,9 @@ int main()
           .build(rhi, surface, rhi.getAdapters());
     // clang-format 
 
+    
+    std::println("Device Choosen : {}", device.getSourceAdapter(rhi).getName());
+
     // clang-format off
     TiRHI::SwapChain swapChain(rhi);
     swapChain
@@ -104,14 +108,30 @@ int main()
             swapChain.recreateSwapChain(device, surface);
         }
 
-        if (!swapChain.beginFrame())
+        if (!swapChain.beginFrame(device))
             continue;
 
         if (cmdList.beginRecord())
         {
+#if defined(TITANIUM_VULKAN) // need to use render pass in order to avoid validation layer message
+            vk::RenderPassBeginInfo renderPassBeginInfo{};
+            vk::ClearColorValue clearColorValue;
+            clearColorValue.setFloat32(clearColor);
+            vk::ClearValue clearValue{};
+            clearValue.setColor(clearColorValue);
+            renderPassBeginInfo.setRenderPass(swapChain.getNativeRenderPass())
+                .setFramebuffer(swapChain.getNativeFrameBuffer())
+                .setRenderArea(
+                    {{0, 0}, {static_cast<uint32_t>(window.getWidth()), static_cast<uint32_t>(window.getHeight())}})
+                .setClearValues(clearValue);
+
+            cmdList.getcurrentFrameCmb().beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
+            cmdList.getcurrentFrameCmb().endRenderPass();
+#endif
+
             cmdList.endRecord();
         }
-        device.submit(cmdList);
+        device.submit(swapChain, cmdList);
         swapChain.present(device);
         rhi.nextFrame();
     }
