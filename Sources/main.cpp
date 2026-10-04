@@ -108,7 +108,8 @@ int main()
             swapChain.recreateSwapChain(device, surface);
         }
 
-        if (!swapChain.beginFrame(device))
+        const TiRHI::AcquiredFrame acquireFrame = swapChain.beginFrame();
+        if (!acquireFrame.getSucces())
             continue;
 
         if (cmdList.beginRecord())
@@ -129,10 +130,29 @@ int main()
             cmdList.getcurrentFrameCmb().endRenderPass();
 #endif
 
+#if defined(TITANIUM_DIRECT_X12)
+            D3D12_RESOURCE_BARRIER barrier{};
+            barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+            barrier.Transition.pResource = swapChain.getNativeCurrentBackBuffer();
+            barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+            barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+            barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+            auto nativeCml = cmdList.getCommandListNative();
+            nativeCml->ResourceBarrier(1, &barrier);
+
+            auto rtv = swapChain.getRtv();
+            nativeCml->OMSetRenderTargets(1, &rtv, FALSE, nullptr);
+
+            nativeCml->ClearRenderTargetView(rtv, clearColor.data(), 0, nullptr);
+            std::swap(barrier.Transition.StateBefore, barrier.Transition.StateAfter);
+
+            nativeCml->ResourceBarrier(1, &barrier);
+#endif
+
             cmdList.endRecord();
         }
-        device.submit(swapChain, cmdList);
-        swapChain.present(device);
+        device.submit(acquireFrame, cmdList);
+        swapChain.present();
         rhi.nextFrame();
     }
 
