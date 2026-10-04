@@ -1,0 +1,224 @@
+{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "installDir": "${sourceDir}/out/install/${presetName}",
+      "cacheVariables": {
+        "VALIDATION_LAYER": true
+      }
+    },
+    {
+      "name": "windows",
+      "hidden": true,
+      "inherits": "base",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "cl.exe",
+        "CMAKE_CXX_COMPILER": "cl.exe"
+      }
+    },
+    {
+      "name": "linux-clang",
+      "hidden": true,
+      "inherits": "base",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "/usr/bin/clang",
+        "CMAKE_CXX_COMPILER": "/usr/bin/clang++"
+      }
+    },
+    {
+      "name": "linux-gcc",
+      "hidden": true,
+      "inherits": "base",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "/usr/bin/gcc",
+        "CMAKE_CXX_COMPILER": "/usr/bin/g++"
+      }
+    },
+    {
+      "name": "mac-os-clang",
+      "hidden": true,
+      "inherits": "base",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      },
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "/usr/bin/clang",
+        "CMAKE_CXX_COMPILER": "/usr/bin/clang++"
+      }
+    },
+
+    {
+      "name": "MSVC-x64-debug-DirectX12",
+      "displayName": "MSVC x64 Debug DirectX12",
+      "inherits": "windows",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "TITANIUM_RHI_BACKEND": "DirectX12"
+      }
+    },
+    {
+      "name": "MSVC-x64-relwithdebinfo-DirectX12",
+      "displayName": "MSVC x64 RelWithDebInfo DirectX12",
+      "inherits": "windows",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "TITANIUM_RHI_BACKEND": "DirectX12"
+      }
+    },
+    {
+      "name": "MSVC-x64-release-DirectX12",
+      "displayName": "MSVC x64 Release DirectX12",
+      "inherits": "windows",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "TITANIUM_RHI_BACKEND": "DirectX12"
+      }
+    },
+
+    {
+      "name": "MSVC-x64-debug-Vulkan",
+      "displayName": "MSVC x64 Debug Vulkan",
+      "inherits": "windows",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "TITANIUM_RHI_BACKEND": "Vulkan"
+      }
+    },
+    {
+      "name": "MSVC-x64-relwithdebinfo-Vulkan",
+      "displayName": "MSVC x64 RelWithDebInfo Vulkan",
+      "inherits": "windows",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "TITANIUM_RHI_BACKEND": "Vulkan"
+      }
+    },
+    {
+      "name": "MSVC-x64-release-Vulkan",
+      "displayName": "MSVC x64 Release Vulkan",
+      "inherits": "windows",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "TITANIUM_RHI_BACKEND": "Vulkan"
+      }
+    },
+
+    {
+      "name": "Clang-linux-debug",
+      "displayName": "Linux Clang Debug",
+      "description": "Linux build using Clang and Ninja",
+      "inherits": "linux-clang",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "TITANIUM_RHI_BACKEND": "Vulkan"
+      }
+    },
+    {
+      "name": "Clang-linux-relwithdebinfo",
+      "displayName": "Linux Clang RelWithDebInfo",
+      "description": "Linux build using Clang and Ninja",
+      "inherits": "linux-clang",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "TITANIUM_RHI_BACKEND": "Vulkan"
+      }
+    },
+    {
+      "name": "Clang-linux-release",
+      "displayName": "Linux Clang Release",
+      "description": "Linux build using Clang and Ninja",
+      "inherits": "linux-clang",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "TITANIUM_RHI_BACKEND": "Vulkan"
+      }
+    },
+
+    {
+      "name": "Clang-mac-os-debug",
+      "displayName": "macOS Clang Debug",
+      "description": "macOS build using Clang and Ninja",
+      "inherits": "mac-os-clang",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "TITANIUM_RHI_BACKEND": "Metal"
+      }
+    },
+    {
+      "name": "Clang-mac-os-relwithdebinfo",
+      "displayName": "macOS Clang RelWithDebInfo",
+      "description": "macOS build using Clang and Ninja",
+      "inherits": "mac-os-clang",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "TITANIUM_RHI_BACKEND": "Metal"
+      }
+    },
+    {
+      "name": "Clang-mac-os-release",
+      "displayName": "macOS Clang Release",
+      "description": "macOS build using Clang and Ninja",
+      "inherits": "mac-os-clang",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "TITANIUM_RHI_BACKEND": "Metal"
+      }
+    },
+
+    {
+      "name": "GCC-linux-debug",
+      "displayName": "Linux GCC Debug",
+      "description": "Linux build using GCC and Ninja",
+      "inherits": "linux-gcc",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "TITANIUM_RHI_BACKEND": "Vulkan"
+      }
+    },
+    {
+      "name": "GCC-linux-relwithdebinfo",
+      "displayName": "Linux GCC RelWithDebInfo",
+      "description": "Linux build using GCC and Ninja",
+      "inherits": "linux-gcc",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "TITANIUM_RHI_BACKEND": "Vulkan"
+      }
+    },
+    {
+      "name": "GCC-linux-release",
+      "displayName": "Linux GCC Release",
+      "description": "Linux build using GCC and Ninja",
+      "inherits": "linux-gcc",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "TITANIUM_RHI_BACKEND": "Vulkan"
+      }
+    }
+  ]
+}
