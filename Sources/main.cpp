@@ -57,8 +57,31 @@ void debugCallBack(const std::wstring& message, TiRHI::RhiApi api, TiRHI::RhiMes
                               AnsiReset, message);
 }
 
+class Io
+{
+public:
+    Io()
+    {
+        glfwInit();
+    }
+
+    void queryEvents()
+    {
+        glfwPollEvents();
+    }
+
+    ~Io()
+    {
+        glfwTerminate();
+    }
+
+private:
+};
+
 int main()
 {
+    Io io;
+
     TiSample::Io::Window window(WindowWidthBaseSize, WindowHeightBaseSize);
 
     TiRHI::RHI rhi(TiRHI::RhiCreate{.frameInFlight = 2, .logCallback = debugCallBack});
@@ -100,7 +123,7 @@ int main()
 
     while (!window.shouldClose())
     {
-        window.pollEvents();
+        io.queryEvents();
         if (window.resized())
         {
             device.wait();
