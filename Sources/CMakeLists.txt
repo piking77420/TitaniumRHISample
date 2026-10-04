@@ -24,3 +24,15 @@ target_link_libraries(${PROJECT_NAME}
         glfw
         TitaniumRHI
 )
+if(TITANIUM_USE_PIX)
+    message(STATUS "Copy PIX DLL: ${TITANIUM_PIX_DLL}")
+
+    add_custom_command(
+        TARGET ${PROJECT_NAME}
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${TITANIUM_PIX_DLL}"
+            "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+        VERBATIM
+    )
+endif()

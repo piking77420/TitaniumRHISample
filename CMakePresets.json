@@ -78,7 +78,8 @@
       "inherits": "windows",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "TITANIUM_RHI_BACKEND": "DirectX12"
+        "TITANIUM_RHI_BACKEND": "DirectX12",
+        "TITANIUM_USE_PIX": true
       }
     },
     {
