@@ -136,20 +136,10 @@ public:
                 TiRHI::DebugScope _(m_cmdList, "SwapChain Pass"sv, std::array{1.0f, 1.0f, 0.0f, 1.0f});
 #if defined(TITANIUM_VULKAN) // need to use render pass in order to avoid validation layer message
 
-                vk::RenderPassBeginInfo renderPassBeginInfo{};
-                vk::ClearColorValue clearColorValue;
-                clearColorValue.setFloat32(clearColor);
-                vk::ClearValue clearValue{};
-                clearValue.setColor(clearColorValue);
-                renderPassBeginInfo.setRenderPass(m_swapChain.getNativeRenderPass())
-                    .setFramebuffer(m_swapChain.getNativeFrameBuffer())
-                    .setRenderArea(
-                        {{0, 0},
-                         {static_cast<uint32_t>(m_window.getWidth()), static_cast<uint32_t>(m_window.getHeight())}})
-                    .setClearValues(clearValue);
-
-                m_cmdList.getcurrentFrameCmb().beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
-                m_cmdList.getcurrentFrameCmb().endRenderPass();
+                if (m_swapChain.beginRenderTargets(m_cmdList))
+                {
+                    m_swapChain.endRenderTargets(m_cmdList);
+                }
 #endif
 
 #if defined(TITANIUM_DIRECT_X12)
