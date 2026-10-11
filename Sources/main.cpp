@@ -130,9 +130,9 @@ public:
 
     TiRHI::GraphicPipeline* graphicPipeline = nullptr;
 
-    std::pair<TiRHI::AcquiredFrame, TiRHI::CommandList*> render()
+    std::pair<TiRHI::AcquiredFrame, TiRHI::CommandList*> render(TiRHI::Device& device)
     {
-        const TiRHI::AcquiredFrame acquireFrame = m_swapChain.acquireNextImage();
+        const TiRHI::AcquiredFrame acquireFrame = m_swapChain.acquireNextImage(device);
         if (!acquireFrame)
             return std::pair<TiRHI::AcquiredFrame, TiRHI::CommandList*>(acquireFrame, nullptr);
 
@@ -205,6 +205,16 @@ public:
         return m_window.shouldClose();
     }
 
+    const TiRHI::SwapChain& getSwapChain() const
+    {
+        return m_swapChain;
+    }
+
+    TiRHI::SwapChain& getSwapChain()
+    {
+        return m_swapChain;
+    }
+
 private:
     TiSample::Io::Window m_window;
 
@@ -251,9 +261,11 @@ TiRHI::GraphicPipeline makeGraphicPipeline(TiRHI::RHI& rhi)
 
     std::cout << std::filesystem::exists(shaderPath) << '\n';
 
-    auto [vertexData, vertexSize] = loadBinaryFile(resourceDir / "TriangleVS.dxil");
+    const char* vertexFile = (rhi.getApi() == TiRHI::RhiApi::DirectX12) ? "TriangleVS.dxil" : "Triangle.vert.spv";
+    auto [vertexData, vertexSize] = loadBinaryFile(resourceDir / vertexFile);
 
-    auto [pixelData, pixelSize] = loadBinaryFile(resourceDir / "TrianglePS.dxil");
+    const char* pixelFile = (rhi.getApi() == TiRHI::RhiApi::DirectX12) ? "TrianglePS.dxil" : "Triangle.frag.spv";
+    auto [pixelData, pixelSize] = loadBinaryFile(resourceDir / pixelFile);
 
     pipeline.addModule(TiRHI::ShaderStage::Vertex, std::move(vertexData), vertexSize)
         .addModule(TiRHI::ShaderStage::Pixel, std::move(pixelData), pixelSize);
@@ -285,6 +297,7 @@ int main()
     std::vector<TiRHI::CommandList*> commandLists;
 
     TiRHI::GraphicPipeline graphicPipiline = makeGraphicPipeline(rhi);
+    graphicPipiline.setRenderPassDescritptor(&apps[0]->getSwapChain().getRenderPassDescriptor());
     if (!graphicPipiline.build(device))
     {
         std::println("Failed to build graphic Pipeline");
@@ -322,13 +335,15 @@ int main()
         }
 
         for (auto& app : apps)
+        {
             app->handleResize(device);
+        }
 
         device.beginFrame();
 
         for (auto& app : apps)
         {
-            auto tickOut = app->render();
+            auto tickOut = app->render(device);
             if (tickOut.first.getSucces() && tickOut.second != nullptr)
             {
                 acquiredFrames.emplace_back(tickOut.first);
