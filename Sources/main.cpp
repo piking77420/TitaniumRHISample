@@ -1,6 +1,11 @@
 #include <iostream>
 #include <print>
 
+#include <fstream>
+#include <filesystem>
+#include <memory>
+#include <stdexcept>
+
 #include <format>
 #include <string>
 #include <string_view>
@@ -9,11 +14,11 @@
 #include <Titanium/TitaniumHeader.hpp>
 #include <Titanium/RHI-DebugScope.hpp>
 
-constexpr int MaxAppInstanceCount = 100;
+constexpr int MaxAppInstanceCount = 8;
 constexpr size_t imageCount = 3;
 constexpr size_t WindowWidthBaseSize = 1280;
 constexpr size_t WindowHeightBaseSize = 720;
-constexpr std::array clearColor{0.1f, 0.2f, 0.4f, 1.0f};
+constexpr std::array AppClearColor{0.1f, 0.2f, 0.4f, 1.0f};
 using namespace std::literals;
 
 static constexpr std::wstring_view AnsiReset = L"\x1b[0m"sv;
@@ -56,7 +61,7 @@ void debugCallBack(const std::wstring& message, TiRHI::RhiApi api, TiRHI::RhiMes
         return AnsiReset;
     };
 
-    std::wcout << std::format(L"[RHI][{}]{}[{}]{}[{}]\n", TiRHI::toWstring(api), getColor(), TiRHI::toWstring(severity),
+    std::wcout << std::format(L"[RHI][{}]{}[{}]{}[{}]\n", TiRHI::toWString(api), getColor(), TiRHI::toWstring(severity),
                               AnsiReset, message);
 }
 
@@ -123,52 +128,48 @@ public:
     }
     ~App() = default;
 
+    TiRHI::GraphicPipeline* graphicPipeline = nullptr;
+
     std::pair<TiRHI::AcquiredFrame, TiRHI::CommandList*> render()
     {
         const TiRHI::AcquiredFrame acquireFrame = m_swapChain.acquireNextImage();
-        if (!acquireFrame.getSucces())
+        if (!acquireFrame)
             return std::pair<TiRHI::AcquiredFrame, TiRHI::CommandList*>(acquireFrame, nullptr);
-        ;
 
         if (m_cmdList.beginRecord())
         {
             {
                 TiRHI::DebugScope _(m_cmdList, "SwapChain Pass"sv, std::array{1.0f, 1.0f, 0.0f, 1.0f});
-#if defined(TITANIUM_VULKAN) // need to use render pass in order to avoid validation layer message
+                TiRHI::RenderTargets& renderTarget = m_swapChain.getCurrentRenderTargets();
 
-                const TiRHI::RenderTargets& renderTarget = m_swapChain.getCurrentRenderTargets();
+                TiRHI::Rect2D renderArea{};
+                renderArea.setExtend(m_swapChain.getExtend());
 
+                std::array<TiRHI::ClearValueColor, 1> clearColor;
+                clearColor[0].color = AppClearColor;
                 TiRHI::BeginRenderPass renderPass{};
-                renderPass.setClearColor(clearColor)
-                    .setClearDepthValue(1.0)
-                    .renderArea.setExtend({m_swapChain.getWidth(), m_swapChain.getHeight()})
-                    .setOffset({static_cast<int>(0), static_cast<int>(0)});
+                renderPass.setRenderArea(renderArea).setClearColors(clearColor);
+
+                m_cmdList.transitionResource(m_swapChain.getCurrentSwapChainTexture(), TiRHI::ResourceState::Present);
                 if (m_cmdList.beginRenderPass(renderPass, renderTarget))
                 {
+                    TiRHI::Viewport viewPort;
+                    viewPort.setPosition({0, 0}).setExtend(static_cast<TiRHI::Extend2DF>(m_swapChain.getExtend()));
+
+                    m_cmdList.setViewPort(viewPort);
+
+                    TiRHI::Rect2D scissors;
+                    scissors.setOffset({0, 0}).setExtend(m_swapChain.getExtend());
+                    m_cmdList.setScissors(scissors);
+
+                    if (graphicPipeline)
+                    {
+                        m_cmdList.bindPipeline(*graphicPipeline);
+                        m_cmdList.draw(3, 1, 0, 0);
+                    }
 
                     m_cmdList.endRenderPass();
                 }
-
-#endif
-
-#if defined(TITANIUM_DIRECT_X12)
-                D3D12_RESOURCE_BARRIER barrier{};
-                barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-                barrier.Transition.pResource = m_swapChain.getNativeCurrentBackBuffer();
-                barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-                barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-                barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-                auto nativeCml = m_cmdList.getCommandListNative();
-                nativeCml->ResourceBarrier(1, &barrier);
-
-                auto rtv = m_swapChain.getRtv();
-                nativeCml->OMSetRenderTargets(1, &rtv, FALSE, nullptr);
-
-                nativeCml->ClearRenderTargetView(rtv, clearColor.data(), 0, nullptr);
-                std::swap(barrier.Transition.StateBefore, barrier.Transition.StateAfter);
-
-                nativeCml->ResourceBarrier(1, &barrier);
-#endif
             }
 
             m_cmdList.endRecord();
@@ -214,6 +215,51 @@ private:
     TiRHI::CommandList m_cmdList;
 };
 
+std::pair<std::unique_ptr<uint8_t[]>, uint32_t> loadBinaryFile(const std::filesystem::path& path)
+{
+    std::ifstream file(path, std::ios::binary | std::ios::ate);
+
+    if (!file)
+        throw std::runtime_error("Failed to open shader file");
+
+    const auto size = file.tellg();
+
+    if (size <= 0 || size > std::numeric_limits<uint32_t>::max())
+        throw std::runtime_error("Invalid shader file size");
+
+    auto data = std::make_unique<uint8_t[]>(static_cast<size_t>(size));
+
+    file.seekg(0, std::ios::beg);
+
+    if (!file.read(reinterpret_cast<char*>(data.get()), size))
+        throw std::runtime_error("Failed to read shader file");
+
+    return {std::move(data), static_cast<uint32_t>(size)};
+}
+
+TiRHI::GraphicPipeline makeGraphicPipeline(TiRHI::RHI& rhi)
+{
+    namespace fs = std::filesystem;
+
+    const fs::path resourceDir = TITANIUM_RESOURCE_DIR;
+
+    TiRHI::GraphicPipeline pipeline(rhi);
+
+    std::cout << std::boolalpha << std::filesystem::exists(resourceDir) << '\n';
+
+    auto shaderPath = resourceDir / "Vertex.dxil";
+
+    std::cout << std::filesystem::exists(shaderPath) << '\n';
+
+    auto [vertexData, vertexSize] = loadBinaryFile(resourceDir / "TriangleVS.dxil");
+
+    auto [pixelData, pixelSize] = loadBinaryFile(resourceDir / "TrianglePS.dxil");
+
+    pipeline.addModule(TiRHI::ShaderStage::Vertex, std::move(vertexData), vertexSize)
+        .addModule(TiRHI::ShaderStage::Pixel, std::move(pixelData), pixelSize);
+
+    return pipeline;
+}
 int main()
 {
     std::println("Number of Instance ? ");
@@ -221,7 +267,7 @@ int main()
     int openApps;
     Io io;
     std::cin >> openApps;
-    openApps = std::clamp(openApps, 0, MaxAppInstanceCount);
+    openApps = std::clamp(openApps, 1, MaxAppInstanceCount);
 
     TiRHI::RHI rhi(TiRHI::RhiCreate{.useDebugLabel = true, .frameInFlight = 2, .logCallback = debugCallBack});
 
@@ -237,6 +283,18 @@ int main()
     }
     std::vector<TiRHI::AcquiredFrame> acquiredFrames;
     std::vector<TiRHI::CommandList*> commandLists;
+
+    TiRHI::GraphicPipeline graphicPipiline = makeGraphicPipeline(rhi);
+    if (!graphicPipiline.build(device))
+    {
+        std::println("Failed to build graphic Pipeline");
+        return 1;
+    }
+
+    for (auto& app : apps)
+    {
+        app->graphicPipeline = &graphicPipiline;
+    }
 
     while (!apps.empty())
     {

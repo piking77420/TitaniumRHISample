@@ -13,6 +13,10 @@ add_executable(
     ${RENDERER_SOURCES}
 )
 
+target_compile_definitions(${PROJECT_NAME} PUBLIC
+    TITANIUM_RESOURCE_DIR="${CMAKE_SOURCE_DIR}/Resources"
+)
+
 target_include_directories(
     ${PROJECT_NAME}
     PUBLIC
