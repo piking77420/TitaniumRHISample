@@ -9,6 +9,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(THIRD_PARTY_DIR "${PROJECT_SOURCE_DIR}/ThirdParty")
 
 set(VALIDATION_LAYER True)
+add_subdirectory("${THIRD_PARTY_DIR}/TitaniumShaderCompiler")
 add_subdirectory("${THIRD_PARTY_DIR}/TitaniumRHI")
 add_subdirectory("${THIRD_PARTY_DIR}/glfw")
 

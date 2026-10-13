@@ -13,6 +13,7 @@
 #include <Window.hpp>
 #include <Titanium/TitaniumHeader.hpp>
 #include <Titanium/RHI-DebugScope.hpp>
+#include <ShaderCompiler.hpp>
 
 constexpr int MaxAppInstanceCount = 8;
 constexpr size_t imageCount = 3;
@@ -247,31 +248,117 @@ std::pair<std::unique_ptr<uint8_t[]>, uint32_t> loadBinaryFile(const std::filesy
     return {std::move(data), static_cast<uint32_t>(size)};
 }
 
+
 TiRHI::GraphicPipeline makeGraphicPipeline(TiRHI::RHI& rhi)
 {
     namespace fs = std::filesystem;
 
     const fs::path resourceDir = TITANIUM_RESOURCE_DIR;
 
+    auto [sourceData, sourceSize] = loadBinaryFile(resourceDir / "triangle.hlsl");
+    using namespace Ti::ShaderCompiler;
+    auto getShaderCompilerApi = [&]()
+        {  
+            switch (rhi.getApi())
+            {
+            case TiRHI::RhiApi::DirectX12:
+                return Compiler::ApiTarget::Dxil;
+            case TiRHI::RhiApi::Metal:
+                return Compiler::ApiTarget::Spirv;
+            case TiRHI::RhiApi::Vulkan:
+                return Compiler::ApiTarget::Spirv;
+            default:
+                break;
+            }
+        return Compiler::ApiTarget::Spirv;
+        };
+
+
+    Compiler c{};
+
+    const std::vector<Compiler::ShaderEntryPoint> entryPoint = {
+        Compiler::ShaderEntryPoint{.stage = Compiler::ShaderStage::Vertex,
+                                   .entryPoint = L"VSMain"sv,
+                                   .outPutModuleName = L"Triangle.vert.spriv"},
+        Compiler::ShaderEntryPoint{.stage = Compiler::ShaderStage::Pixel,
+                                   .entryPoint = L"PSMain"sv,
+                                   .outPutModuleName = L"Triangle.pixel.spriv"}};
+
+
     TiRHI::GraphicPipeline pipeline(rhi);
 
-    std::cout << std::boolalpha << std::filesystem::exists(resourceDir) << '\n';
+   Compiler::GetCodeInfo info;
+    // clang-format off
+    info.setCode(std::span((const std::byte*)sourceData.get(), (const std::byte*)(sourceData.get() + sourceSize)))
+        .setApiTarget(getShaderCompilerApi())
+        .setEntryPoints(entryPoint);
 
-    auto shaderPath = resourceDir / "Vertex.dxil";
+    std::expected modulesCode = c.getCode(info);
+    
+    if (modulesCode)
+    {
+        std::vector<std::vector<std::byte>>& codes = modulesCode.value();
 
-    std::cout << std::filesystem::exists(shaderPath) << '\n';
+        auto toStringFromW = [](const std::wstring_view& ws)
+            {
+                return std::string{ws.begin(), ws.end()};
+            };
 
-    const char* vertexFile = (rhi.getApi() == TiRHI::RhiApi::DirectX12) ? "TriangleVS.dxil" : "Triangle.vert.spv";
-    auto [vertexData, vertexSize] = loadBinaryFile(resourceDir / vertexFile);
+            pipeline.addModule(TiRHI::ShaderStage::Vertex, codes[0], toStringFromW(entryPoint[0].entryPoint))
+                .addModule(TiRHI::ShaderStage::Pixel, codes[1], toStringFromW(entryPoint[1].entryPoint));
+    }
+    else
+	{
+	    const Compiler::CompileError& error = modulesCode.error();
 
-    const char* pixelFile = (rhi.getApi() == TiRHI::RhiApi::DirectX12) ? "TrianglePS.dxil" : "Triangle.frag.spv";
-    auto [pixelData, pixelSize] = loadBinaryFile(resourceDir / pixelFile);
+        if (std::holds_alternative<Compiler::GetCodeError>(error))
+        {
+            const Compiler::GetCodeError codeError = std::get<Compiler::GetCodeError>(error);
+            switch (codeError)
+            {
+            case Compiler::GetCodeError::EmptyEntryPoints:
+                std::cerr << "Empty entry points\n";
+                break;
 
-    pipeline.addModule(TiRHI::ShaderStage::Vertex, std::move(vertexData), vertexSize)
-        .addModule(TiRHI::ShaderStage::Pixel, std::move(pixelData), pixelSize);
+            case Compiler::GetCodeError::InvalidSourceCode:
+                std::cerr << "Invalid source code\n";
+                break;
+
+            case Compiler::GetCodeError::LoadingCodeFailed:
+                std::cerr << "Failed to load shader code\n";
+                break;
+
+            case Compiler::GetCodeError::InvalidShaderStage:
+                std::cerr << "Invalid shader stage\n";
+                break;
+
+            case Compiler::GetCodeError::InvalidApi:
+                std::cerr << "Invalid API target\n";
+                break;
+
+            case Compiler::GetCodeError::ShaderCompilationFailed:
+                std::cerr << "Shader compilation failed\n";
+                break;
+
+            case Compiler::GetCodeError::UnexpectedError:
+                std::cerr << "Unexpected error\n";
+                break;
+
+            default:
+                std::cerr << "Unknown shader compiler error\n";
+                break;
+            }
+        }
+        else
+        {
+            std::cerr << std::get<std::string>(error) << '\n';
+        }
+	}
+
 
     return pipeline;
 }
+
 int main()
 {
     std::println("Number of Instance ? ");
@@ -301,6 +388,7 @@ int main()
     if (!graphicPipiline.build(device))
     {
         std::println("Failed to build graphic Pipeline");
+        std::getchar();
         return 1;
     }
 

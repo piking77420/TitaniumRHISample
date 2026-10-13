@@ -27,6 +27,7 @@ target_link_libraries(${PROJECT_NAME}
     PRIVATE
         glfw
         TitaniumRHI
+        TitaniumShaderCompiler
 )
 if(TITANIUM_USE_PIX)
     message(STATUS "Copy PIX DLL: ${TITANIUM_PIX_DLL}")
