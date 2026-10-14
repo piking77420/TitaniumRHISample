@@ -2,7 +2,7 @@
 
 #include <GLFW/glfw3.h>
 
-namespace Ti::Core::Io
+namespace Ti::Io
 {
     Io::Io()
     {
@@ -19,4 +19,4 @@ namespace Ti::Core::Io
         glfwPollEvents();
     }
 
-} // Ti::Core::Io
+} // Ti::Io

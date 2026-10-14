@@ -1,6 +1,6 @@
 #include <App.hpp>
 
-namespace Ti::Core::Platerform
+namespace Ti::Plateform
 {
     using namespace std::literals;
 
@@ -128,4 +128,4 @@ namespace Ti::Core::Platerform
     {
         return m_swapChain;
     }
-} // Ti::Core::Platerform
+} // Ti::Core::Plateform

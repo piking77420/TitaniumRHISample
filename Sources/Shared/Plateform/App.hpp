@@ -1,5 +1,5 @@
-#ifndef TITATNIUM_SAMPLE_CORE_PLATEFORM
-#define TITATNIUM_SAMPLE_CORE_PLATEFORM
+#ifndef TITATNIUM_SAMPLE_PLATEFORM_H
+#define TITATNIUM_SAMPLE_PLATEFORM_H
 
 #include <string_view>
 
@@ -7,7 +7,7 @@
 #include <Titanium/RHI-DebugScope.hpp>
 #include <Window.hpp>
 
-namespace Ti::Core::Platerform
+namespace Ti::Plateform
 {
     constexpr size_t WindowWidthBaseSize = 1280;
     constexpr size_t WindowHeightBaseSize = 720;
@@ -38,7 +38,7 @@ namespace Ti::Core::Platerform
         TiRHI::SwapChain& getSwapChain();
 
     private:
-        TiSample::Io::Window m_window;
+        Ti::Plateform::Window m_window;
 
         TiRHI::Surface m_surface;
 
@@ -49,4 +49,4 @@ namespace Ti::Core::Platerform
 
 } // Ti::Core::Platerform
 
-#endif // !TITATNIUM_SAMPLE_CORE_PLATEFORM
+#endif // !TITATNIUM_SAMPLE_PLATEFORM_H

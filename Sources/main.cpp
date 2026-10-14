@@ -1,18 +1,18 @@
 #include <iostream>
 #include <print>
-
 #include <fstream>
 #include <filesystem>
 #include <memory>
 #include <stdexcept>
-
 #include <format>
 #include <string>
 #include <string_view>
+
 #include <Window.hpp>
 #include <ShaderCompiler.hpp>
 #include <Io.hpp>
 #include <App.hpp>
+#include <Thread.hpp>
 
 constexpr int MaxAppInstanceCount = 8;
 using namespace std::literals;
@@ -192,7 +192,9 @@ TiRHI::GraphicPipeline makeGraphicPipeline(TiRHI::RHI& rhi)
 
 int main()
 {
-    Ti::Core::Io::Io io;
+    Ti::Core::SetThreadName("MainThread");
+
+    Ti::Io::Io io;
     TiRHI::RHI rhi(TiRHI::RhiCreate{.useDebugLabel = true, .frameInFlight = 2, .logCallback = debugCallBack});
     TiRHI::Device device = rhi.newDevice();
     std::println("Device Choosen : {}", device.getSourceAdapter(rhi).getName());
@@ -202,11 +204,11 @@ int main()
     std::cin >> openApps;
     openApps = std::clamp(openApps, 1, MaxAppInstanceCount);
 
-    std::vector<std::unique_ptr<Ti::Core::Platerform::App>> apps;
+    std::vector<std::unique_ptr<Ti::Plateform::App>> apps;
 
     for (size_t i = 0; i < static_cast<size_t>(openApps); i++)
     {
-        apps.emplace_back(std::make_unique<Ti::Core::Platerform::App>(rhi, device));
+        apps.emplace_back(std::make_unique<Ti::Plateform::App>(rhi, device));
     }
     std::vector<TiRHI::AcquiredFrame> acquiredFrames;
     std::vector<TiRHI::CommandList*> commandLists;

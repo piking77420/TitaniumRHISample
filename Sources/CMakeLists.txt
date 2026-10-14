@@ -1,15 +1,14 @@
 cmake_minimum_required(VERSION 3.26)
 
+
 project(Renderer VERSION 0.1.0 LANGUAGES CXX)
 
+add_subdirectory(Shared/Core)
+add_subdirectory(Shared/Io)
+add_subdirectory(Shared/Plateform)
+
 set(RENDERER_SOURCES
-    App.cpp
-    App.hpp
-    Io.cpp
-    Io.hpp
     main.cpp
-    Window.cpp
-    Window.hpp
 )
 
 add_executable(
@@ -32,6 +31,9 @@ target_link_libraries(${PROJECT_NAME}
         glfw
         TitaniumRHI
         TitaniumShaderCompiler
+        Core
+        Io
+        Plateform
 )
 if(TITANIUM_USE_PIX)
     message(STATUS "Copy PIX DLL: ${TITANIUM_PIX_DLL}")
