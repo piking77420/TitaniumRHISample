@@ -220,6 +220,15 @@
         "CMAKE_BUILD_TYPE": "Release",
         "TITANIUM_RHI_BACKEND": "Vulkan"
       }
+    },
+    {
+      "name": "MSVC-x64-debug-Metal",
+      "displayName": "MSVC x64 Debug Metal",
+      "inherits": "windows",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "TITANIUM_RHI_BACKEND": "Metal"
+      }
     }
   ]
 }
