@@ -3,6 +3,10 @@ cmake_minimum_required(VERSION 3.26)
 project(Renderer VERSION 0.1.0 LANGUAGES CXX)
 
 set(RENDERER_SOURCES
+    App.cpp
+    App.hpp
+    Io.cpp
+    Io.hpp
     main.cpp
     Window.cpp
     Window.hpp
