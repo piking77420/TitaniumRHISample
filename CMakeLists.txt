@@ -9,6 +9,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(THIRD_PARTY_DIR "${PROJECT_SOURCE_DIR}/ThirdParty")
 
 set(VALIDATION_LAYER True)
+if(CMAKE_GENERATOR STREQUAL "Xcode" OR APPLE)
+    set(TITANIUM_RHI_BACKEND "Metal" CACHE STRING "RHI backend")
+endif()
+
 add_subdirectory("${THIRD_PARTY_DIR}/TitaniumShaderCompiler")
 add_subdirectory("${THIRD_PARTY_DIR}/TitaniumRHI")
 add_subdirectory("${THIRD_PARTY_DIR}/glfw")
