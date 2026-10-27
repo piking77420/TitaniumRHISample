@@ -1,4 +1,4 @@
-#include <Thread.hpp>
+#include <Core/Thread.hpp>
 
 #ifdef _WIN32
 #include <windows.h>

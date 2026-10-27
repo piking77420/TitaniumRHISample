@@ -8,11 +8,12 @@
 #include <string>
 #include <string_view>
 
-#include <Window.hpp>
 #include <ShaderCompiler.hpp>
-#include <Io.hpp>
-#include <App.hpp>
-#include <Thread.hpp>
+#include <Core/Thread.hpp>
+#include <PlateForm/App.hpp>
+#include <PlateForm/Window.hpp>
+#include <Io/Io.hpp>
+#include <Io/File.hpp>
 
 constexpr int MaxAppInstanceCount = 8;
 using namespace std::literals;
@@ -60,27 +61,6 @@ void debugCallBack(const std::wstring& message, TiRHI::RhiApi api, TiRHI::RhiMes
     std::wcout << std::format(L"[RHI][{}]{}[{}]{}[{}]\n", TiRHI::toWString(api), getColor(), TiRHI::toWstring(severity),
                               AnsiReset, message);
 }
-std::pair<std::unique_ptr<uint8_t[]>, uint32_t> loadBinaryFile(const std::filesystem::path& path)
-{
-    std::ifstream file(path, std::ios::binary | std::ios::ate);
-
-    if (!file)
-        throw std::runtime_error("Failed to open shader file");
-
-    const auto size = file.tellg();
-
-    if (size <= 0 || size > std::numeric_limits<uint32_t>::max())
-        throw std::runtime_error("Invalid shader file size");
-
-    auto data = std::make_unique<uint8_t[]>(static_cast<size_t>(size));
-
-    file.seekg(0, std::ios::beg);
-
-    if (!file.read(reinterpret_cast<char*>(data.get()), size))
-        throw std::runtime_error("Failed to read shader file");
-
-    return {std::move(data), static_cast<uint32_t>(size)};
-}
 
 TiRHI::GraphicPipeline makeGraphicPipeline(TiRHI::RHI& rhi)
 {
@@ -88,7 +68,8 @@ TiRHI::GraphicPipeline makeGraphicPipeline(TiRHI::RHI& rhi)
 
     const fs::path resourceDir = TITANIUM_RESOURCE_DIR;
 
-    auto [sourceData, sourceSize] = loadBinaryFile(resourceDir / "triangle.hlsl");
+    Ti::Io::File file;
+    file.loadFileBinary(resourceDir / "triangle.hlsl");
     using namespace Ti::ShaderCompiler;
     auto getShaderCompilerApi = [&]()
     {
@@ -120,7 +101,7 @@ TiRHI::GraphicPipeline makeGraphicPipeline(TiRHI::RHI& rhi)
 
     Compiler::GetCodeInfo info;
     // clang-format off
-    info.setCode(std::span((const std::byte*)sourceData.get(), (const std::byte*)(sourceData.get() + sourceSize)))
+    info.setCode(std::span((const std::byte*)file.getData(), (const std::byte*)(file.getData() + file.getSize())))
         .setApiTarget(getShaderCompilerApi())
         .setEntryPoints(entryPoint);
 

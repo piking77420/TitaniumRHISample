@@ -7,43 +7,46 @@ add_subdirectory(Shared/Core)
 add_subdirectory(Shared/Io)
 add_subdirectory(Shared/Plateform)
 
-set(RENDERER_SOURCES
-    main.cpp
+set(PRIVATE_DEPENDENCIES
+    glfw
+    TitaniumRHI
+    TitaniumShaderCompiler
+    Core
+    Io
+    Plateform
 )
 
-add_executable(
-    ${PROJECT_NAME}
-    ${RENDERER_SOURCES}
-)
 
-target_compile_definitions(${PROJECT_NAME} PUBLIC
-    TITANIUM_RESOURCE_DIR="${CMAKE_SOURCE_DIR}/Resources"
-)
+set(TITANIUM_RESOURCE_DIR "${CMAKE_SOURCE_DIR}/Resources")
+set(EXECUTABLE_NAMES "")
+add_subdirectory(Samples/Triangle)
 
-target_include_directories(
-    ${PROJECT_NAME}
-    PUBLIC
-        "${CMAKE_CURRENT_SOURCE_DIR}"
-)
 
-target_link_libraries(${PROJECT_NAME}
-    PRIVATE
-        glfw
-        TitaniumRHI
-        TitaniumShaderCompiler
-        Core
-        Io
-        Plateform
-)
-if(TITANIUM_USE_PIX)
-    message(STATUS "Copy PIX DLL: ${TITANIUM_PIX_DLL}")
-
-    add_custom_command(
-        TARGET ${PROJECT_NAME}
-        POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${TITANIUM_PIX_DLL}"
-            "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
-        VERBATIM
+foreach(target IN LISTS EXECUTABLE_NAMES)
+    target_compile_definitions(${target} PRIVATE
+        TITANIUM_RESOURCE_DIR=\"${TITANIUM_RESOURCE_DIR}\"
     )
-endif()
+
+    target_include_directories(
+        ${target}
+        PUBLIC
+            "${CMAKE_CURRENT_SOURCE_DIR}/Shared"
+    )
+
+    target_link_libraries(${target}
+        ${PRIVATE_DEPENDENCIES}
+    )
+
+    if(TITANIUM_USE_PIX)
+        message(STATUS "Copy PIX DLL: ${TITANIUM_PIX_DLL}")
+
+        add_custom_command(
+            TARGET ${target}
+            POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${TITANIUM_PIX_DLL}"
+                "$<TARGET_FILE_DIR:${target}>"
+            VERBATIM
+        )
+    endif()
+endforeach()
