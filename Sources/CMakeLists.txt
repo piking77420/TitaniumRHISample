@@ -36,17 +36,26 @@ foreach(target IN LISTS EXECUTABLE_NAMES)
     target_link_libraries(${target}
         ${PRIVATE_DEPENDENCIES}
     )
-
     if(TITANIUM_USE_PIX)
-        message(STATUS "Copy PIX DLL: ${TITANIUM_PIX_DLL}")
+        message(STATUS "Add Command Copy PIX DLL: ${TITANIUM_PIX_DLL}, to ${target}")
 
-        add_custom_command(
-            TARGET ${target}
-            POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${TITANIUM_PIX_DLL}"
-                "$<TARGET_FILE_DIR:${target}>"
-            VERBATIM
-        )
+        if(WIN32 AND TITANIUM_USE_PIX)
+            if(NOT TARGET ${target})
+                message(FATAL_ERROR "Unknown target: ${target}")
+            endif()
+
+            if(NOT EXISTS "${TITANIUM_PIX_DLL}")
+                message(FATAL_ERROR "PIX DLL not found: ${TITANIUM_PIX_DLL}")
+            endif()
+
+            add_custom_target(copy_pix_${target}
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    "${TITANIUM_PIX_DLL}"
+                    "$<TARGET_FILE_DIR:${target}>"
+                COMMENT "Copy PIX DLL for ${target}"
+                VERBATIM
+            )
+        add_dependencies(${target} copy_pix_${target})
+        endif()
     endif()
 endforeach()
