@@ -92,11 +92,6 @@ namespace Ti::Plateform
         return std::pair<TiRHI::AcquiredFrame, TiRHI::CommandList*>(acquireFrame, &m_cmdList);
     }
 
-    void App::swapBuffer()
-    {
-        m_swapChain.present();
-    }
-
     void App::handleResize(TiRHI::Device& device)
     {
         if (!m_window.resized())

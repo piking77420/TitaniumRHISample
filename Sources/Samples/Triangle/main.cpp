@@ -7,6 +7,7 @@
 #include <format>
 #include <string>
 #include <string_view>
+#include <span>
 
 #include <ShaderCompiler.hpp>
 #include <Core/Thread.hpp>
@@ -191,8 +192,8 @@ int main()
     {
         apps.emplace_back(std::make_unique<Ti::Plateform::App>(rhi, device));
     }
-    std::vector<TiRHI::AcquiredFrame> acquiredFrames;
-    std::vector<TiRHI::CommandList*> commandLists;
+    std::vector<std::pair<TiRHI::AcquiredFrame, TiRHI::CommandList*>> renderApps;
+    std::vector<TiRHI::Device::SubmitPresentDesc> submitsPresents;
 
     TiRHI::GraphicPipeline graphicPipiline = makeGraphicPipeline(rhi);
     graphicPipiline.setRenderPassDescritptor(&apps[0]->getSwapChain().getRenderPassDescriptor());
@@ -210,8 +211,9 @@ int main()
 
     while (!apps.empty())
     {
-        acquiredFrames.clear();
-        commandLists.clear();
+        renderApps.clear();
+        submitsPresents.clear();
+
         for (auto& app : apps)
             app->prepareForCurrentFrame();
 
@@ -243,15 +245,20 @@ int main()
         {
             auto tickOut = app->render(device);
             if (tickOut.first.getSucces() && tickOut.second != nullptr)
-            {
-                acquiredFrames.emplace_back(tickOut.first);
-                commandLists.emplace_back(tickOut.second);
-            }
+                 renderApps.emplace_back(tickOut.first, tickOut.second);
+            
         }
 
-        device.submit(acquiredFrames, commandLists);
-        for (auto& app : apps)
-            app->swapBuffer();
+        for (auto& renderApp : renderApps)
+		{
+			 submitsPresents.emplace_back(TiRHI::Device::SubmitPresentDesc
+                 {
+                     .commandList = renderApp.second,
+                     .acquireFrames = std::span(&renderApp.first, 1)
+                 });
+		}
+
+        device.submitPresent(submitsPresents);
         rhi.nextFrame();
     }
 

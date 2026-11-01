@@ -25,8 +25,6 @@ namespace Ti::Plateform
 
         std::pair<TiRHI::AcquiredFrame, TiRHI::CommandList*> render(TiRHI::Device& device);
 
-        void swapBuffer();
-
         void handleResize(TiRHI::Device& device);
 
         void prepareForCurrentFrame();
