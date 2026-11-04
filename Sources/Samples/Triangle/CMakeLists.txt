@@ -4,8 +4,7 @@ set(EXECUTABLE_NAME Triangle)
 
 add_executable(
     ${EXECUTABLE_NAME}
-    main.cpp
-)   
+    main.cpp)   
 
 list(APPEND EXECUTABLE_NAMES ${EXECUTABLE_NAME})
 

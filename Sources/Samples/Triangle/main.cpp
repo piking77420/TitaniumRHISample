@@ -9,6 +9,7 @@
 #include <string_view>
 #include <span>
 
+#include <Assets/Image.hpp>
 #include <ShaderCompiler.hpp>
 #include <Core/Thread.hpp>
 #include <PlateForm/App.hpp>
@@ -207,6 +208,15 @@ int main()
     for (auto& app : apps)
     {
         app->graphicPipeline = &graphicPipiline;
+    }
+
+    Ti::Assets::Image image(std::filesystem::path(TITANIUM_RESOURCE_DIR) / "DiamondOre.png");
+
+    if (!image)
+    {
+        std::println("Failed to load image");
+        std::getchar();
+        return 1;
     }
 
     while (!apps.empty())
