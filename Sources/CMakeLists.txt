@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.26)
 project(Renderer VERSION 0.1.0 LANGUAGES CXX)
 
 add_subdirectory(Shared/Assets)
+add_subdirectory(Shared/Rendering)
 add_subdirectory(Shared/Core)
 add_subdirectory(Shared/Io)
 add_subdirectory(Shared/Plateform)
@@ -15,6 +16,7 @@ set(PRIVATE_DEPENDENCIES
     Io
     Plateform
     Assets
+    Rendering
 )
 
 

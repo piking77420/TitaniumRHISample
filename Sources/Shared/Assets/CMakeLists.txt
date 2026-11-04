@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.26)
 
 set(SOURCES
+    Asset.hpp
+    Asset.cpp
+    AssetReference.hpp
     Image.cpp
     Image.hpp
 )

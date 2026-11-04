@@ -5,14 +5,16 @@
 #include <string_view>
 #include <filesystem>
 
+#include <Assets/Asset.hpp>
+
 namespace Ti::Assets
 {
-    class Image
+    class Image : public Asset
     {
     public:
-        Image() = default;
-        ~Image() = default;
-        Image(const std::filesystem::path path);
+        Image();
+        virtual ~Image();
+        Image();
 
         operator bool() const
         {
@@ -22,6 +24,11 @@ namespace Ti::Assets
         const std::unique_ptr<std::byte[]>& getData() const
         {
             return m_data;
+        }
+
+        std::unique_ptr<std::byte[]> acquireData() &&
+        {
+            return std::move(m_data);
         }
 
         size_t getSize() const

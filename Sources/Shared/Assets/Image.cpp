@@ -5,7 +5,12 @@
 
 namespace Ti::Assets
 {
+    Image::Image() = default;
+
+    Image::~Image() = default;
+
     Image::Image(const std::filesystem::path path)
+        : m_path(path)
     {
         if (!std::filesystem::exists(path)) // TODO do log
             return;

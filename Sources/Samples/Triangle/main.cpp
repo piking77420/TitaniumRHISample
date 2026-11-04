@@ -10,6 +10,8 @@
 #include <span>
 
 #include <Assets/Image.hpp>
+#include <Assets/Texture.hpp>
+#include <Rendering/Texture.hpp>
 #include <ShaderCompiler.hpp>
 #include <Core/Thread.hpp>
 #include <PlateForm/App.hpp>
@@ -210,14 +212,23 @@ int main()
         app->graphicPipeline = &graphicPipiline;
     }
 
-    Ti::Assets::Image image(std::filesystem::path(TITANIUM_RESOURCE_DIR) / "DiamondOre.png");
-
+    Ti::Assets::AssetStrongRef<Ti::Assets::Image> image = std::make_shared<Ti::Assets::Image>(std::filesystem::path(TITANIUM_RESOURCE_DIR) / "DiamondOre.png")));
     if (!image)
     {
         std::println("Failed to load image");
         std::getchar();
         return 1;
     }
+    Ti::Assets::Texture texture(image);
+    Ti::Rendering::Texture renderTexture = Ti::Rendering::Texture(rhi, texture);
+
+    if (!renderTexture.isValid())
+    {
+        std::println("Failed build texture image");
+        std::getchar();
+        return 1;
+    }
+
 
     while (!apps.empty())
     {
@@ -247,8 +258,7 @@ int main()
 
         for (auto& app : apps)
             app->handleResize(device);
-        
-
+       
         device.beginFrame();
 
         for (auto& app : apps)
