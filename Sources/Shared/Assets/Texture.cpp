@@ -2,7 +2,7 @@
 
 namespace Ti::Assets
 {
-    Texture::Texture(const AssetStrongRef<const Image>& image)
+    Texture::Texture(AssetStrongRef<const Image> image)
         : m_image(image)
     {
     }

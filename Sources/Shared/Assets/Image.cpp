@@ -10,7 +10,6 @@ namespace Ti::Assets
     Image::~Image() = default;
 
     Image::Image(const std::filesystem::path path)
-        : m_path(path)
     {
         if (!std::filesystem::exists(path)) // TODO do log
             return;
@@ -29,9 +28,10 @@ namespace Ti::Assets
         if (!data)
             return;
 
-        const size_t size = static_cast<size_t>(width) * static_cast<size_t>(height) * static_cast<size_t>(channels);
-        m_data.reset(new std::byte[size]);
-        std::memcpy(m_data.get(), data, size);
+        m_channel = static_cast<size_t>(channels);
+        m_size = static_cast<size_t>(width) * static_cast<size_t>(height) * static_cast<size_t>(channels);
+        m_data.reset(new std::byte[m_size]);
+        std::memcpy(m_data.get(), data, m_size);
         stbi_image_free(data);
     }
 } // namespace Ti::Assets

@@ -8,8 +8,8 @@ namespace Ti::Rendering
     {
     }
 
-    Texture::Texture(TiRHI::RHI& rhi, const Assets::Texture& assetsTexture)
-        : m_texture(rhi)
+    Texture::Texture(TiRHI::Device& device, const Assets::Texture& assetsTexture)
+        : m_texture(device.getRHI())
     {
         Assets::AssetWeakRef<const Assets::Image> weakref = assetsTexture.getImage();
 
@@ -28,6 +28,13 @@ namespace Ti::Rendering
                 });
 
             */
+
+            m_texture.setWidth(strongRef->getSize())
+                .setHeight(strongRef->getSize())
+                .setName("TestTexture")
+                .setType(TiRHI::TextureType::Texture2D)
+                .setFlags(TiRHI::TextureFlags::CopyDestination | TiRHI::TextureFlags::ShaderResource)
+                .build(device);
         }
     }
 } // namespace Ti::Rendering

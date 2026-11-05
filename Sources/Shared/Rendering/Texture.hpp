@@ -21,7 +21,7 @@ namespace Ti::Rendering
     public:
         Texture(TiRHI::RHI& rhi);
         virtual ~Texture() = default;
-        Texture(TiRHI::RHI& rhi, const Assets::Texture& assetsTexture);
+        Texture(TiRHI::Device& device, const Assets::Texture& assetsTexture);
 
         TiRHI::Texture& getRhiTexture()
         {

@@ -14,7 +14,7 @@ namespace Ti::Assets
     public:
         Image();
         virtual ~Image();
-        Image();
+        Image(const std::filesystem::path path);
 
         operator bool() const
         {

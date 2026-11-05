@@ -6,6 +6,8 @@ set(SOURCES
     AssetReference.hpp
     Image.cpp
     Image.hpp
+    Texture.cpp
+    Texture.hpp
 )
 
 add_library(Assets STATIC ${SOURCES})

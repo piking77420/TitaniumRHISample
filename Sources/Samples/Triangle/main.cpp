@@ -212,19 +212,39 @@ int main()
         app->graphicPipeline = &graphicPipiline;
     }
 
-    Ti::Assets::AssetStrongRef<Ti::Assets::Image> image = std::make_shared<Ti::Assets::Image>(std::filesystem::path(TITANIUM_RESOURCE_DIR) / "DiamondOre.png")));
-    if (!image)
+    Ti::Assets::AssetStrongRef<Ti::Assets::Image> image = std::make_shared<Ti::Assets::Image>(std::filesystem::path(TITANIUM_RESOURCE_DIR) / "DiamondOre.png");
+    if (image->getSize() == 0ull)
     {
         std::println("Failed to load image");
         std::getchar();
         return 1;
     }
     Ti::Assets::Texture texture(image);
-    Ti::Rendering::Texture renderTexture = Ti::Rendering::Texture(rhi, texture);
+    Ti::Rendering::Texture renderTexture = Ti::Rendering::Texture(device, texture);
 
     if (!renderTexture.isValid())
     {
         std::println("Failed build texture image");
+        std::getchar();
+        return 1;
+    }
+
+    TiRHI::Sampler s(rhi);
+    if (!s.setName("BaseSampler")
+        .build(device))
+    {
+        std::println("Failed build Sampler");
+        std::getchar();
+        return 1;
+    }
+
+    TiRHI::DescriptorSet set(rhi);
+
+    if (!set.setName("TextureDescritproSet")
+        .bindSampledTexture(TiRHI::ShaderStageFlags::Pixel, &renderTexture.getRhiTexture(), &s, 0, 1)
+        .build(device))
+    {
+        std::println("Failed build DescriptorSet");
         std::getchar();
         return 1;
     }

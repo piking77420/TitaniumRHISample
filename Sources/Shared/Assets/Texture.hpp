@@ -14,7 +14,7 @@ namespace Ti::Assets
     public:
         Texture() = default;
         ~Texture() = default;
-        Texture(const AssetStrongRef<const Image>& image);
+        Texture(AssetStrongRef<const Image> image);
 
         const AssetWeakRef<const Image>& getImage() const
         {
