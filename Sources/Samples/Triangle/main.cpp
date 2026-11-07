@@ -18,52 +18,38 @@
 #include <PlateForm/Window.hpp>
 #include <Io/Io.hpp>
 #include <Io/File.hpp>
+#include <Core/Log.hpp>
 
 constexpr int MaxAppInstanceCount = 8;
 using namespace std::literals;
 
-static constexpr std::wstring_view AnsiReset = L"\x1b[0m"sv;
-static constexpr std::wstring_view AnsiBlack = L"\x1b[30m"sv;
-static constexpr std::wstring_view AnsiRed = L"\x1b[31m"sv;
-static constexpr std::wstring_view AnsiGreen = L"\x1b[32m"sv;
-static constexpr std::wstring_view AnsiYellow = L"\x1b[33m"sv;
-static constexpr std::wstring_view AnsiOrange = L"\x1b[38;2;255;165;0m"sv;
-static constexpr std::wstring_view AnsiBlue = L"\x1b[34m"sv;
-static constexpr std::wstring_view AnsiMagenta = L"\x1b[35m"sv;
-static constexpr std::wstring_view AnsiCyan = L"\x1b[36m"sv;
-static constexpr std::wstring_view AnsiWhite = L"\x1b[37m"sv;
-static constexpr std::wstring_view AnsiGrey = L"\x1b[90m"sv;
-static constexpr std::wstring_view AnsiBrightRed = L"\x1b[91m"sv;
-static constexpr std::wstring_view AnsiBrightGreen = L"\x1b[92m"sv;
-static constexpr std::wstring_view AnsiBrightYellow = L"\x1b[93m"sv;
-static constexpr std::wstring_view AnsiBrightBlue = L"\x1b[94m"sv;
-static constexpr std::wstring_view AnsiBrightMagenta = L"\x1b[95m"sv;
-static constexpr std::wstring_view AnsiBrightCyan = L"\x1b[96m"sv;
-static constexpr std::wstring_view AnsiBrightWhite = L"\x1b[97m"sv;
-
 void debugCallBack(const std::wstring& message, TiRHI::RhiApi api, TiRHI::RhiMessageSeverity severity)
 {
-    auto getColor = [&severity]() -> std::wstring_view
+    const std::string s = std::string{message.begin(), message.end()};
+    const std::string_view apiName = TiRHI::toString(api);
+
+    switch (severity)
     {
-        switch (severity)
-        {
-        case TiRHI::RhiMessageSeverity::Verbose:
-            return AnsiReset;
-        case TiRHI::RhiMessageSeverity::Info:
-            return AnsiGrey;
-        case TiRHI::RhiMessageSeverity::Warning:
-            return AnsiOrange;
-        case TiRHI::RhiMessageSeverity::Error:
-            return AnsiRed;
-        case TiRHI::RhiMessageSeverity::Fatal:
-            return AnsiMagenta;
-        }
+    case TiRHI::RhiMessageSeverity::Verbose:
+        TI_LOG_VERBOSE(RHI, "[{}] {}", apiName, s);
+        break;
 
-        return AnsiReset;
-    };
+    case TiRHI::RhiMessageSeverity::Info:
+        TI_LOG_INFO(RHI, "[{}] {}", apiName, s);
+        break;
 
-    std::wcout << std::format(L"[RHI][{}]{}[{}]{}[{}]\n", TiRHI::toWString(api), getColor(), TiRHI::toWstring(severity),
-                              AnsiReset, message);
+    case TiRHI::RhiMessageSeverity::Warning:
+        TI_LOG_WARNING(RHI, "[{}] {}", apiName, s);
+        break;
+
+    case TiRHI::RhiMessageSeverity::Error:
+        TI_LOG_ERROR(RHI, "[{}] {}", apiName, s);
+        break;
+
+    case TiRHI::RhiMessageSeverity::Fatal:
+        TI_LOG_FATAL(RHI, "[{}] {}", apiName, s);
+        break;
+    }
 }
 
 TiRHI::GraphicPipeline makeGraphicPipeline(TiRHI::RHI& rhi)
@@ -178,10 +164,12 @@ TiRHI::GraphicPipeline makeGraphicPipeline(TiRHI::RHI& rhi)
 int main()
 {
     Ti::Core::SetThreadName("MainThread");
-
+    Ti::Core::Log::setFileOutPut("Saved/Log.txt");
     Ti::Io::Io io;
     TiRHI::RHI rhi(TiRHI::RhiCreate{.useDebugLabel = true, .frameInFlight = 2, .logCallback = debugCallBack});
     TiRHI::Device device = rhi.newDevice();
+
+    TI_LOG_INFO(Core, "Device Choosen : {}",  device.getSourceAdapter(rhi).getName());
     std::println("Device Choosen : {}", device.getSourceAdapter(rhi).getName());
 
     std::println("Number of Instance ? ");
@@ -197,26 +185,10 @@ int main()
     }
     std::vector<std::pair<TiRHI::AcquiredFrame, TiRHI::CommandList*>> renderApps;
     std::vector<TiRHI::Device::SubmitPresentDesc> submitsPresents;
-
-    TiRHI::GraphicPipeline graphicPipiline = makeGraphicPipeline(rhi);
-    graphicPipiline.setRenderPassDescritptor(&apps[0]->getSwapChain().getRenderPassDescriptor());
-    if (!graphicPipiline.build(device))
-    {
-        std::println("Failed to build graphic Pipeline");
-        std::getchar();
-        return 1;
-    }
-
-    for (auto& app : apps)
-    {
-        app->graphicPipeline = &graphicPipiline;
-    }
-
     Ti::Assets::AssetStrongRef<Ti::Assets::Image> image = std::make_shared<Ti::Assets::Image>(std::filesystem::path(TITANIUM_RESOURCE_DIR) / "DiamondOre.png");
     if (image->getSize() == 0ull)
     {
-        std::println("Failed to load image");
-        std::getchar();
+        TI_LOG_FATAL(Core, "Failed to load image");
         return 1;
     }
     Ti::Assets::Texture texture(image);
@@ -224,8 +196,7 @@ int main()
 
     if (!renderTexture.isValid())
     {
-        std::println("Failed build texture image");
-        std::getchar();
+        TI_LOG_FATAL(Core, "Failed build texture image");
         return 1;
     }
 
@@ -233,8 +204,7 @@ int main()
     if (!s.setName("BaseSampler")
         .build(device))
     {
-        std::println("Failed build Sampler");
-        std::getchar();
+        TI_LOG_FATAL(Core, "Failed build Sampler");
         return 1;
     }
 
@@ -244,11 +214,23 @@ int main()
         .bindSampledTexture(TiRHI::ShaderStageFlags::Pixel, &renderTexture.getRhiTexture(), &s, 0, 1)
         .build(device))
     {
-        std::println("Failed build DescriptorSet");
-        std::getchar();
+        TI_LOG_FATAL(Core, "Failed build DescriptorSet");
         return 1;
     }
 
+
+    TiRHI::GraphicPipeline graphicPipiline = makeGraphicPipeline(rhi);
+    graphicPipiline.setRenderPassDescritptor(&apps[0]->getSwapChain().getRenderPassDescriptor());
+    if (!graphicPipiline.build(device))
+    {
+        TI_LOG_FATAL(Core, "Failed to build graphic Pipeline");
+        return 1;
+    }
+
+    for (auto& app : apps)
+    {
+        app->graphicPipeline = &graphicPipiline;
+    }
 
     while (!apps.empty())
     {

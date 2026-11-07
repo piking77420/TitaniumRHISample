@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.26)
 
 set(SOURCES
+    EnumToString.hpp
+    Log.cpp
+    Log.hpp
     Thread.cpp
     Thread.hpp
 )
