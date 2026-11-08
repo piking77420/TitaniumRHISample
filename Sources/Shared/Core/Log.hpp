@@ -128,7 +128,6 @@ namespace Ti::Core
         inline constexpr LogCategory Rendering{"Rendering", Log::AnsiCyan};
         inline constexpr LogCategory Assets{"Assets", Log::AnsiYellow};
         inline constexpr LogCategory RHI{"RHI", Log::AnsiMagenta};
-
     }
 }
 

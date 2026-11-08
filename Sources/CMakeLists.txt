@@ -22,6 +22,23 @@ set(PRIVATE_DEPENDENCIES
 
 set(TITANIUM_RESOURCE_DIR "${CMAKE_SOURCE_DIR}/Resources")
 set(EXECUTABLE_NAMES "")
+
+# Setup Common
+add_subdirectory(Samples/Common)
+
+target_include_directories(
+    Common
+    PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/Shared"
+)
+
+target_link_libraries(Common
+        ${PRIVATE_DEPENDENCIES}
+)
+target_compile_definitions(Common PRIVATE
+        TITANIUM_RESOURCE_DIR=\"${TITANIUM_RESOURCE_DIR}\"
+    )
+
 add_subdirectory(Samples/Triangle)
 
 
@@ -38,6 +55,7 @@ foreach(target IN LISTS EXECUTABLE_NAMES)
 
     target_link_libraries(${target}
         ${PRIVATE_DEPENDENCIES}
+        Common
     )
     if(TITANIUM_USE_PIX)
         message(STATUS "Add Command Copy PIX DLL: ${TITANIUM_PIX_DLL}, to ${target}")

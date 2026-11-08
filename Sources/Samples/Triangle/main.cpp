@@ -9,27 +9,42 @@
 #include <string_view>
 #include <span>
 
+#include <Common/Exemple.hpp>
 #include <Assets/Image.hpp>
 #include <Assets/Texture.hpp>
 #include <Rendering/Texture.hpp>
-#include <ShaderCompiler.hpp>
-#include <Core/Thread.hpp>
-#include <Plateform/BaseExemple.hpp>
 #include <Io/File.hpp>
 #include <Core/Log.hpp>
 
 using namespace std::literals;
 
-class TriangleExemple : public Ti::Plateform::BaseExemple
+class TriangleExemple : public Ti::Common::Exemple
 {
 public:
     TriangleExemple() = delete;
     virtual ~TriangleExemple() = default;
 
     TriangleExemple(std::string name)
-        : Ti::Plateform::BaseExemple(std::move(name))
+        : Ti::Common::Exemple(std::move(name))
         , m_pipeline(makeGraphicPipeline(getRHI()))
     {
+        using namespace Ti::ShaderCompiler;
+        namespace fs = std::filesystem;
+
+        const fs::path resourceDir = fs::path(TITANIUM_RESOURCE_DIR) / "triangle.hlsl";
+        const std::vector<Compiler::ShaderEntryPoint> entryPoint = {
+            Compiler::ShaderEntryPoint{.stage = Compiler::ShaderStage::Vertex,
+                                       .entryPoint = L"VSMain"sv,
+                                       .outPutModuleName = L"Triangle.vert.spriv"},
+            Compiler::ShaderEntryPoint{.stage = Compiler::ShaderStage::Pixel,
+                                       .entryPoint = L"PSMain"sv,
+                                       .outPutModuleName = L"Triangle.pixel.spriv"}};
+
+        std::vector<CompileModuleData> moduleDatas = compileShader(resourceDir.generic_string().c_str(), entryPoint);
+
+        for (auto& moduleDatas : moduleDatas)
+            m_pipeline.addModule(moduleDatas.stage, std::move(moduleDatas.data), std::move(moduleDatas.entryPoint));
+
         if (!m_pipeline.setName("Base Pipeline")
                  .setRenderPassDescritptor(&getSwapChain().getRenderPassDescriptor())
                  .build(getDevice()))
@@ -39,8 +54,6 @@ public:
     }
 
 protected:
-    Ti::ShaderCompiler::Compiler m_shaderCompiler;
-
     TiRHI::GraphicPipeline m_pipeline;
 
     TiRHI::GraphicPipeline makeGraphicPipeline(TiRHI::RHI& rhi)
@@ -82,7 +95,7 @@ protected:
 
         Compiler::GetCodeInfo info;
         // clang-format off
-    info.setCode(std::span((const std::byte*)file.getData(), (const std::byte*)(file.getData() + file.getSize())))
+        info.setCode(std::span((const std::byte*)file.getData(), (const std::byte*)(file.getData() + file.getSize())))
         .setApiTarget(getShaderCompilerApi())
         .setEntryPoints(entryPoint);
 
@@ -103,49 +116,7 @@ protected:
     else
 	{
 	    const Compiler::CompileError& error = modulesCode.error();
-
-        if (std::holds_alternative<Compiler::GetCodeError>(error))
-        {
-            const Compiler::GetCodeError codeError = std::get<Compiler::GetCodeError>(error);
-            switch (codeError)
-            {
-            case Compiler::GetCodeError::EmptyEntryPoints:
-                std::cerr << "Empty entry points\n";
-                break;
-
-            case Compiler::GetCodeError::InvalidSourceCode:
-                std::cerr << "Invalid source code\n";
-                break;
-
-            case Compiler::GetCodeError::LoadingCodeFailed:
-                std::cerr << "Failed to load shader code\n";
-                break;
-
-            case Compiler::GetCodeError::InvalidShaderStage:
-                std::cerr << "Invalid shader stage\n";
-                break;
-
-            case Compiler::GetCodeError::InvalidApi:
-                std::cerr << "Invalid API target\n";
-                break;
-
-            case Compiler::GetCodeError::ShaderCompilationFailed:
-                std::cerr << "Shader compilation failed\n";
-                break;
-
-            case Compiler::GetCodeError::UnexpectedError:
-                std::cerr << "Unexpected error\n";
-                break;
-
-            default:
-                std::cerr << "Unknown shader compiler error\n";
-                break;
-            }
-        }
-        else
-        {
-            std::cerr << std::get<std::string>(error) << '\n';
-        }
+        printCompilerError(std::get<Compiler::GetCodeError>(error));
 	}
 
 
