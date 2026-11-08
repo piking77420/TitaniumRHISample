@@ -4,6 +4,7 @@ set(SOURCES
     EnumToString.hpp
     Log.cpp
     Log.hpp
+    Path.hpp
     Thread.cpp
     Thread.hpp
 )

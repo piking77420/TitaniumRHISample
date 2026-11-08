@@ -1,6 +1,7 @@
 #include <Plateform/App.hpp>
 #include <Core/Log.hpp>
 #include <Core/Thread.hpp>
+#include <Core/Path.hpp>
 
 namespace Ti::Plateform
 {
@@ -14,7 +15,7 @@ namespace Ti::Plateform
         : m_name(name)
     {
         Ti::Core::SetThreadName("PlateFrom Thread");
-        Ti::Core::Log::setFileOutPut("Saved/Log.txt");
+        Ti::Core::Log::setFileOutPut((std::filesystem::path(Ti::Paths::Saved) / "Log.txt"));
     }
 
 } // Ti::Core::Plateform

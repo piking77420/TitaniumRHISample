@@ -1,40 +1,54 @@
 #ifndef TITANIUM_SAMPLE_IO_FILE_H
 #define TITANIUM_SAMPLE_IO_FILE_H
 
-#include <memory>
+#include <fstream>
 #include <filesystem>
+#include <memory>
+#include <span>
 
 namespace Ti::Io
 {
     class File
     {
     public:
+        enum class OpenMode
+        {
+            Read,  // Open an existing file for reading.
+            Write, // Create or overwrite a file.
+            Append // Create or add data to the end.
+        };
+
         File() = default;
-        ~File() = default;
+        ~File();
 
-        bool loadFileBinary(const std::filesystem::path& path);
+        File(const File&) = delete;
+        File& operator=(const File&) = delete;
 
-        const std::byte* getData() const
+        File(File&&) = default;
+        File& operator=(File&&) = default;
+
+        File(const std::filesystem::path& path, OpenMode mode);
+
+        OpenMode getMode() const
         {
-            return m_data.get();
+            return m_mode;
         }
+        bool isOpen() const;
 
-        uint32_t getSize() const
-        {
-            return m_size;
-        }
+        size_t read(std::span<std::byte> destination);
+        size_t write(std::span<const std::byte> source);
 
-        uint32_t getAlignement() const
-        {
-            return m_alignement;
-        }
+        bool seek(uint64_t offset);
+        uint64_t getSize() const;
 
     private:
-        std::unique_ptr<std::byte[]> m_data;
+        std::fstream m_stream;
+        OpenMode m_mode = OpenMode::Read;
+        uint64_t m_size = 0;
 
-        uint32_t m_alignement = 0;
+        void open(const std::filesystem::path& path);
 
-        uint32_t m_size = 0;
+        void close();
     };
 
 } // Ti::Io

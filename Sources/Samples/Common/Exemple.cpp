@@ -50,11 +50,22 @@ namespace Ti::Common
         namespace fs = std::filesystem;
         using namespace Ti::ShaderCompiler;
 
-        Ti::Io::File file;
-        file.loadFileBinary(filePath);
+        size_t size = 0;
+        std::unique_ptr<std::byte[]> data;
+        {
+            Ti::Io::File file(filePath, Ti::Io::File::OpenMode::Read);
 
-        if (file.getSize() == 0)
-            return {};
+            if (!file.isOpen())
+                return {};
+
+            if (file.getSize() == 0)
+                return {};
+
+            size = file.getSize();
+            std::unique_ptr data2 = std::make_unique<std::byte[]>(size);
+            file.read(std::span(data2.get(), size));
+            data = std::move(data2);
+        }
 
         auto getShaderCompilerApi = [&]()
         {
@@ -74,7 +85,7 @@ namespace Ti::Common
 
         Compiler::GetCodeInfo info;
         // clang-format off
-        info.setCode(std::span((const std::byte*)file.getData(), (const std::byte*)(file.getData() + file.getSize())))
+        info.setCode(std::span(data.get(), size))
         .setApiTarget(getShaderCompilerApi())
         .setEntryPoints(shaderEntryPoint);
 

@@ -50,34 +50,15 @@ namespace Ti::Core
         static void print(const std::source_location& location, LogCategory category, std::format_string<Args...> fmt,
                           Args&&... args)
         {
-            const std::string message = std::format(fmt, std::forward<Args>(args)...);
-
-            {
-                std::scoped_lock lock(m_mutex);
-
-                std::println("{}[{},{}]{} {} ({}:{})", category.color, category.name, toString(severity), AnsiReset,
-                             message, location.file_name(), location.line());
-
-                if (m_file.is_open())
-                {
-                    std::format_to(std::ostreambuf_iterator<char>(m_file), "[{},{}] {} ({}:{})\n", category.name,
-                                   toString(severity), message, location.file_name(), location.line());
-
-                    if constexpr (severity >= Severity::Error)
-                    {
-                        m_file.flush();
-                    }
-                }
-
-                if constexpr (severity == Severity::Fatal)
-                    std::fflush(stdout);
-            }
+            const auto message = std::format(fmt, std::forward<Args>(args)...);
+            writeMessage(location, category, severity, message);
 
             if constexpr (severity == Severity::Fatal)
                 std::terminate();
         }
 
         static void setFileOutPut(std::string_view path);
+        static void setFileOutPut(std::filesystem::path path);
 
         static constexpr std::wstring_view wAnsiReset = L"\x1b[0m"sv;
         static constexpr std::wstring_view wAnsiBlack = L"\x1b[30m"sv;
@@ -118,8 +99,8 @@ namespace Ti::Core
         static constexpr std::string_view AnsiBrightWhite = "\x1b[97m"sv;
 
     private:
-        static inline std::recursive_mutex m_mutex;
-        static inline std::ofstream m_file;
+        static void writeMessage(const std::source_location& location, LogCategory category, Severity severity,
+                                 std::string_view message);
     };
 
     namespace LogCategories

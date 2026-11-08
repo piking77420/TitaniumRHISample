@@ -9,7 +9,6 @@
 
 namespace Ti::Plateform
 {
-
     class App
     {
     public:
