@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.26)
 set(SOURCES
     App.cpp
     App.hpp
+    BaseExemple.cpp
+    BaseExemple.hpp
     Window.cpp
     Window.hpp
 )

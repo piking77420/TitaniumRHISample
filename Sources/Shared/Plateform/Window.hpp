@@ -9,7 +9,7 @@ namespace Ti::Plateform
     class Window
     {
     public:
-        Window() = delete;
+        Window() = default;
         ~Window();
         Window(int witdh, int height);
 

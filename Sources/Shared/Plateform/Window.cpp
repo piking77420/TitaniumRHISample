@@ -18,7 +18,8 @@ namespace Ti::Plateform
 
     Window::~Window()
     {
-        glfwDestroyWindow(m_window);
+        if (m_window != nullptr)
+            glfwDestroyWindow(m_window);
     }
 
     Window::Window(int witdh, int height)
