@@ -14,37 +14,53 @@ namespace Ti::Assets
     public:
         Image();
         virtual ~Image();
-        Image(const std::filesystem::path path);
+        Image(const std::filesystem::path& path);
 
         operator bool() const
         {
             return m_data.get() != nullptr;
         }
 
-        const std::unique_ptr<std::byte[]>& getData() const
+        const std::byte* getData() const noexcept
         {
-            return m_data;
+            return m_data.get();
         }
 
-        std::unique_ptr<std::byte[]> acquireData() &&
+        std::unique_ptr<std::byte[]> acquireData() && noexcept
         {
+            m_width = 0;
+            m_height = 0;
+            m_totalSize = 0;
+            m_channel = 0;
+
             return std::move(m_data);
         }
 
-        size_t getSize() const
+        size_t getTotalSize() const
         {
-            return m_size;
+            return m_totalSize;
         }
-
         size_t getChannel() const
         {
-            return m_size;
+            return m_channel;
+        }
+        size_t getWidth() const
+        {
+            return m_width;
+        }
+        size_t getHeight() const
+        {
+            return m_height;
         }
 
     private:
         std::unique_ptr<std::byte[]> m_data;
 
-        size_t m_size = 0;
+        size_t m_width = 0;
+
+        size_t m_height = 0;
+
+        size_t m_totalSize = 0;
 
         size_t m_channel = 0;
     };

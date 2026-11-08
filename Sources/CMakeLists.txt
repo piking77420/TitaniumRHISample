@@ -11,7 +11,7 @@ add_subdirectory(Shared/Plateform)
 set(PRIVATE_DEPENDENCIES
     glfw
     TitaniumRHI
-    TitaniumShaderCompiler
+    TitaniumShaderCompiler ## TODO remove it
     Core
     Io
     Plateform
@@ -39,7 +39,10 @@ target_compile_definitions(Common PRIVATE
         TITANIUM_RESOURCE_DIR=\"${TITANIUM_RESOURCE_DIR}\"
     )
 
+
+## add All samples
 add_subdirectory(Samples/Triangle)
+add_subdirectory(Samples/TriangleTexture)
 
 
 foreach(target IN LISTS EXECUTABLE_NAMES)
