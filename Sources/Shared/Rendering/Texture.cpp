@@ -28,13 +28,13 @@ namespace Ti::Rendering
                 });
 
             */
-
+            /*
             m_texture.setWidth(strongRef->getSize())
                 .setHeight(strongRef->getSize())
                 .setName("TestTexture")
                 .setType(TiRHI::TextureType::Texture2D)
                 .setFlags(TiRHI::TextureFlags::CopyDestination | TiRHI::TextureFlags::ShaderResource)
-                .build(device);
+                .build(device);*/
         }
     }
 } // namespace Ti::Rendering

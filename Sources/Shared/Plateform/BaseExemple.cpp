@@ -92,7 +92,7 @@ namespace Ti::Plateform
             return;
         }
         // To avoid device wait we need to use deferred destroy
-        m_device.wait();
+        // m_device.wait();
         m_swapChain.setWidth(m_window.getWidth()).setHeight(m_window.getHeight());
         m_swapChain.recreateSwapChain(m_device, m_surface);
     }

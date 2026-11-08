@@ -119,6 +119,17 @@ namespace Ti::Io
         return static_cast<size_t>(count);
     }
 
+    std::unique_ptr<std::byte[]> File::clone()
+    {
+        if (!isOpen() || m_mode == OpenMode::Write || m_size == 0)
+            return {};
+
+        std::unique_ptr<std::byte[]> out = std::make_unique<std::byte[]>(m_size);
+        read(std::span(out.get(), m_size));
+
+        return out;
+    }
+
     bool File::seek(uint64_t offset)
     {
         if (!isOpen() || m_mode == OpenMode::Append ||

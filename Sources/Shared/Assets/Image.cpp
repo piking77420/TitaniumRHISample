@@ -3,35 +3,56 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
+#include <Io/File.hpp>
+
 namespace Ti::Assets
 {
     Image::Image() = default;
 
     Image::~Image() = default;
 
-    Image::Image(const std::filesystem::path path)
+    Image::Image(const std::filesystem::path& path)
     {
-        if (!std::filesystem::exists(path)) // TODO do log
-            return;
+        std::unique_ptr<std::byte[]> fileData;
+        uint64_t fileSize = 0;
 
-        const std::string s = path.generic_string();
+        {
+            Io::File file(path, Io::File::OpenMode::Read);
+            if (!file.isOpen())
+                return;
 
-        if (s.empty())
+            fileSize = file.getSize();
+
+            if (fileSize == 0 || fileSize > static_cast<uint64_t>(std::numeric_limits<int>::max()))
+            {
+                return;
+            }
+
+            fileData = file.clone();
+        }
+
+        if (!fileData)
             return;
 
         int width = 0;
         int height = 0;
-        int channels = 0;
+        int sourceChannels = 0;
 
-        stbi_uc* data = stbi_load(s.c_str(), &width, &height, &channels, STBI_rgb_alpha);
+        stbi_uc* pixels =
+            stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(fileData.get()), static_cast<int>(fileSize), &width,
+                                  &height, &sourceChannels, STBI_rgb_alpha);
 
-        if (!data)
+        if (!pixels)
             return;
 
-        m_channel = static_cast<size_t>(channels);
-        m_size = static_cast<size_t>(width) * static_cast<size_t>(height) * static_cast<size_t>(channels);
-        m_data.reset(new std::byte[m_size]);
-        std::memcpy(m_data.get(), data, m_size);
-        stbi_image_free(data);
+        m_width = static_cast<size_t>(width);
+        m_height = static_cast<size_t>(height);
+        m_channel = STBI_rgb_alpha;
+        m_totalSize = m_width * m_height * m_channel;
+
+        m_data = std::make_unique<std::byte[]>(m_totalSize);
+        std::memcpy(m_data.get(), pixels, m_totalSize);
+
+        stbi_image_free(pixels);
     }
 } // namespace Ti::Assets

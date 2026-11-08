@@ -38,6 +38,8 @@ namespace Ti::Io
         size_t read(std::span<std::byte> destination);
         size_t write(std::span<const std::byte> source);
 
+        std::unique_ptr<std::byte[]> clone();
+
         bool seek(uint64_t offset);
         uint64_t getSize() const;
 
