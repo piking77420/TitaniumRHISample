@@ -47,6 +47,7 @@ target_compile_definitions(Common PRIVATE
 ## add All samples
 add_subdirectory(Samples/Triangle)
 add_subdirectory(Samples/TriangleTexture)
+add_subdirectory(Samples/TriangleTexturePushConstant)
 
 
 foreach(target IN LISTS EXECUTABLE_NAMES)
