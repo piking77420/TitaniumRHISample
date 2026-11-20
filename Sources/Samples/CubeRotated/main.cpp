@@ -22,6 +22,64 @@
 using namespace std::literals;
 using namespace Ti::ShaderCompiler;
 namespace fs = std::filesystem;
+#undef min
+#undef max
+#include <Vector3.hpp>
+#include <Vector2.hpp>
+
+struct Vertex
+{
+    MathLib::Vector3f position;
+    MathLib::Vector2f uv;
+};
+
+std::array<Vertex, 36> vertices = {{// Front (+Z)
+                                    {MathLib::Vector3f{-0.5f, -0.5f, 0.5f}, MathLib::Vector2f{0.0f, 1.0f}},
+                                    {MathLib::Vector3f{0.5f, -0.5f, 0.5f}, MathLib::Vector2f{1.0f, 1.0f}},
+                                    {MathLib::Vector3f{0.5f, 0.5f, 0.5f}, MathLib::Vector2f{1.0f, 0.0f}},
+                                    {MathLib::Vector3f{-0.5f, -0.5f, 0.5f}, MathLib::Vector2f{0.0f, 1.0f}},
+                                    {MathLib::Vector3f{0.5f, 0.5f, 0.5f}, MathLib::Vector2f{1.0f, 0.0f}},
+                                    {MathLib::Vector3f{-0.5f, 0.5f, 0.5f}, MathLib::Vector2f{0.0f, 0.0f}},
+
+                                    // Back (-Z)
+                                    {MathLib::Vector3f{0.5f, -0.5f, -0.5f}, MathLib::Vector2f{0.0f, 1.0f}},
+                                    {MathLib::Vector3f{-0.5f, -0.5f, -0.5f}, MathLib::Vector2f{1.0f, 1.0f}},
+                                    {MathLib::Vector3f{-0.5f, 0.5f, -0.5f}, MathLib::Vector2f{1.0f, 0.0f}},
+                                    {MathLib::Vector3f{0.5f, -0.5f, -0.5f}, MathLib::Vector2f{0.0f, 1.0f}},
+                                    {MathLib::Vector3f{-0.5f, 0.5f, -0.5f}, MathLib::Vector2f{1.0f, 0.0f}},
+                                    {MathLib::Vector3f{0.5f, 0.5f, -0.5f}, MathLib::Vector2f{0.0f, 0.0f}},
+
+                                    // Left (-X)
+                                    {MathLib::Vector3f{-0.5f, -0.5f, -0.5f}, MathLib::Vector2f{0.0f, 1.0f}},
+                                    {MathLib::Vector3f{-0.5f, -0.5f, 0.5f}, MathLib::Vector2f{1.0f, 1.0f}},
+                                    {MathLib::Vector3f{-0.5f, 0.5f, 0.5f}, MathLib::Vector2f{1.0f, 0.0f}},
+                                    {MathLib::Vector3f{-0.5f, -0.5f, -0.5f}, MathLib::Vector2f{0.0f, 1.0f}},
+                                    {MathLib::Vector3f{-0.5f, 0.5f, 0.5f}, MathLib::Vector2f{1.0f, 0.0f}},
+                                    {MathLib::Vector3f{-0.5f, 0.5f, -0.5f}, MathLib::Vector2f{0.0f, 0.0f}},
+
+                                    // Right (+X)
+                                    {MathLib::Vector3f{0.5f, -0.5f, 0.5f}, MathLib::Vector2f{0.0f, 1.0f}},
+                                    {MathLib::Vector3f{0.5f, -0.5f, -0.5f}, MathLib::Vector2f{1.0f, 1.0f}},
+                                    {MathLib::Vector3f{0.5f, 0.5f, -0.5f}, MathLib::Vector2f{1.0f, 0.0f}},
+                                    {MathLib::Vector3f{0.5f, -0.5f, 0.5f}, MathLib::Vector2f{0.0f, 1.0f}},
+                                    {MathLib::Vector3f{0.5f, 0.5f, -0.5f}, MathLib::Vector2f{1.0f, 0.0f}},
+                                    {MathLib::Vector3f{0.5f, 0.5f, 0.5f}, MathLib::Vector2f{0.0f, 0.0f}},
+
+                                    // Top (+Y)
+                                    {MathLib::Vector3f{-0.5f, 0.5f, 0.5f}, MathLib::Vector2f{0.0f, 1.0f}},
+                                    {MathLib::Vector3f{0.5f, 0.5f, 0.5f}, MathLib::Vector2f{1.0f, 1.0f}},
+                                    {MathLib::Vector3f{0.5f, 0.5f, -0.5f}, MathLib::Vector2f{1.0f, 0.0f}},
+                                    {MathLib::Vector3f{-0.5f, 0.5f, 0.5f}, MathLib::Vector2f{0.0f, 1.0f}},
+                                    {MathLib::Vector3f{0.5f, 0.5f, -0.5f}, MathLib::Vector2f{1.0f, 0.0f}},
+                                    {MathLib::Vector3f{-0.5f, 0.5f, -0.5f}, MathLib::Vector2f{0.0f, 0.0f}},
+
+                                    // Bottom (-Y)
+                                    {MathLib::Vector3f{-0.5f, -0.5f, -0.5f}, MathLib::Vector2f{0.0f, 1.0f}},
+                                    {MathLib::Vector3f{0.5f, -0.5f, -0.5f}, MathLib::Vector2f{1.0f, 1.0f}},
+                                    {MathLib::Vector3f{0.5f, -0.5f, 0.5f}, MathLib::Vector2f{1.0f, 0.0f}},
+                                    {MathLib::Vector3f{-0.5f, -0.5f, -0.5f}, MathLib::Vector2f{0.0f, 1.0f}},
+                                    {MathLib::Vector3f{0.5f, -0.5f, 0.5f}, MathLib::Vector2f{1.0f, 0.0f}},
+                                    {MathLib::Vector3f{-0.5f, -0.5f, 0.5f}, MathLib::Vector2f{0.0f, 0.0f}}}};
 
 class CubeRotated : public Ti::Common::Exemple
 {
@@ -35,10 +93,13 @@ public:
         , m_sampler(getRHI())
         , m_pipeline(getRHI())
         , m_set(getRHI())
+        , m_vertexBuffer(getRHI())
     {
         setupTexture();
         setupSampler();
         setupDescriptorSet();
+        setupVertexDescription();
+        setupBuffer();
         setupPipeline();
         setupImgui();
     }
@@ -52,7 +113,13 @@ protected:
 
     TiRHI::DescriptorSet m_set;
 
-    std::optional<std::move_only_function<void(TiRHI::CommandList&)>> pendingUpload;
+    TiRHI::Buffer m_vertexBuffer;
+
+    std::array<TiRHI::VertexBindingDescription, 1> m_vertexBindingDescription;
+
+    std::array<TiRHI::VertexInputAttributeDescription, 2> m_vertexInputAttributeDescription;
+
+    std::vector<std::move_only_function<void(TiRHI::CommandList&)>> m_pendingUploads;
 
     Ti::ThirdParty::ImguiIntegration m_imguiIntegration;
 
@@ -81,13 +148,32 @@ protected:
             }
         }
 
-        pendingUpload.emplace(
+        m_pendingUploads.emplace_back(
             [this, size = image.getTotalSize(), data = std::move(image).acquireData()](TiRHI::CommandList& command)
             {
                 command.transitionResource(m_texture, TiRHI::ResourceState::CopyDestination);
                 command.upload2d(m_texture, std::as_bytes(std::span(data.get(), size)));
                 command.transitionResource(m_texture, TiRHI::ResourceState::ShaderResource);
             });
+    }
+
+    void setupVertexDescription()
+    {
+        m_vertexBindingDescription[0].binding = 0;
+        m_vertexBindingDescription[0].stride = sizeof(Vertex);
+        m_vertexBindingDescription[0].vertexInputRate = TiRHI::VertexInputRate::Vertex;
+
+        // Position
+        m_vertexInputAttributeDescription[0].binding = 0;
+        m_vertexInputAttributeDescription[0].format = TiRHI::Format::R32G32B32Float;
+        m_vertexInputAttributeDescription[0].offset = offsetof(Vertex, position);
+        m_vertexInputAttributeDescription[0].location = 0;
+
+        // UV
+        m_vertexInputAttributeDescription[1].binding = 0;
+        m_vertexInputAttributeDescription[1].format = TiRHI::Format::R32G32Float;
+        m_vertexInputAttributeDescription[1].offset = offsetof(Vertex, uv);
+        m_vertexInputAttributeDescription[1].location = 1;
     }
 
     void setupSampler()
@@ -112,14 +198,14 @@ protected:
 
     void setupPipeline()
     {
-        const fs::path resourceDir = fs::path(TITANIUM_RESOURCE_DIR) / "triangleTextured.hlsl";
+        const fs::path resourceDir = fs::path(TITANIUM_RESOURCE_DIR) / "cube.hlsl";
         const std::vector<Compiler::ShaderEntryPoint> entryPoint = {
             Compiler::ShaderEntryPoint{.stage = Compiler::ShaderStage::Vertex,
                                        .entryPoint = L"VSMain"sv,
-                                       .outPutModuleName = L"TriangleTextured.vert.spriv"},
+                                       .outPutModuleName = L"cube.vert.spriv"},
             Compiler::ShaderEntryPoint{.stage = Compiler::ShaderStage::Pixel,
                                        .entryPoint = L"PSMain"sv,
-                                       .outPutModuleName = L"TriangleTextured.pixel.spriv"}};
+                                       .outPutModuleName = L"cube.pixel.spriv"}};
 
         std::vector<CompileModuleData> moduleDatas = compileShader(resourceDir.generic_string().c_str(), entryPoint);
 
@@ -129,6 +215,8 @@ protected:
         if (!m_pipeline.setName("Base Pipeline")
                  .setDescriptorSetLayoutEntries(
                      std::array{TiRHI::GraphicPipeline::DescriptorSetLayoutEntry{m_set.getBindingsLayout(), 0}})
+                 .setVertexBindingDescription(m_vertexBindingDescription)
+                 .setVertexInputAttributeDescription(m_vertexInputAttributeDescription)
                  .setRenderPassDescritptor(&getSwapChain().getRenderPassDescriptor())
                  .build(getDevice()))
         {
@@ -148,6 +236,30 @@ protected:
         }
     }
 
+    void setupBuffer()
+    {
+        const bool success = m_vertexBuffer.setName("VertexBuffer")
+                                 .setMemoryType(TiRHI::BufferMemoryType::Default)
+                                 .setUpdateMode(TiRHI::BufferUpdateMode::Static)
+                                 .setUsage(TiRHI::BufferUsage::Vertex | TiRHI::BufferUsage::CopyDestination)
+                                 .setSize(sizeof(vertices))
+                                 .build(getDevice());
+        if (!success)
+        {
+            TI_LOG_FATAL(Rendering, "Failed to build VertexBuffer");
+            return;
+        }
+
+        m_pendingUploads.emplace_back(
+            [this, verticiesToUpload = vertices](TiRHI::CommandList& command)
+            {
+                command.transitionResource(m_vertexBuffer, TiRHI::ResourceState::CopyDestination);
+                command.uploadBuffer(m_vertexBuffer, 0,
+                                     std::as_bytes(std::span(verticiesToUpload.data(), verticiesToUpload.size())));
+                command.transitionResource(m_vertexBuffer, TiRHI::ResourceState::VertexBuffer);
+            });
+    }
+
     void setupImgui()
     {
         if (!m_imguiIntegration.build(getDevice(), getWindow(), getSwapChain()))
@@ -162,12 +274,10 @@ protected:
             return;
 
         {
-            if (pendingUpload)
-            {
-                TiRHI::DebugScope _(cmd, "Upload"sv, std::array{0.0f, 0.0f, 1.0f, 1.0f});
-                (*pendingUpload)(cmd);
-                pendingUpload.reset();
-            }
+            TiRHI::DebugScope _(cmd, "Upload"sv, std::array{0.0f, 0.0f, 1.0f, 1.0f});
+            for (auto& f : m_pendingUploads)
+                f(cmd);
+            m_pendingUploads.clear();
         }
 
         {
@@ -195,7 +305,8 @@ protected:
                 cmd.setScissors(scissors);
                 cmd.bindPipeline(m_pipeline);
                 cmd.bindDescriptorSet(m_set, 0);
-                cmd.draw(3, 1, 0, 0);
+                cmd.bindVertexBuffer(0, 0, m_vertexBuffer);
+                cmd.draw(static_cast<uint32_t>(vertices.size()), 1, 0, 0);
 
                 {
                     TiRHI::DebugScope _(cmd, "Imgui Pass"sv, std::array{1.0f, 1.0f, 0.0f, 1.0f});
