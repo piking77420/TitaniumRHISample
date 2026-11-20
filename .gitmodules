@@ -8,3 +8,9 @@
 [submodule "ThirdParty/TitaniumRHI"]
 	path = ThirdParty/TitaniumRHI
 	url = https://github.com/piking77420/TitaniumRHI.git
+[submodule "ThirdParty/TitaniumShaderCompiler"]
+	path = ThirdParty/TitaniumShaderCompiler
+	url = https://github.com/piking77420/TitaniumShaderCompiler.git
+[submodule "ThirdParty/stb"]
+	path = ThirdParty/stb
+	url = https://github.com/nothings/stb.git

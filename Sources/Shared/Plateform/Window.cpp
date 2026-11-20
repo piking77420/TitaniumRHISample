@@ -1,4 +1,4 @@
-#include <Window.hpp>
+#include <Plateform/Window.hpp>
 
 #include <GLFW/glfw3.h>
 #include <iostream>
@@ -6,7 +6,7 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
 
-namespace TiSample::Io
+namespace Ti::Plateform
 {
     void Window::framebufferResizeCallback(GLFWwindow* window, int width, int height)
     {
@@ -18,7 +18,8 @@ namespace TiSample::Io
 
     Window::~Window()
     {
-        glfwDestroyWindow(m_window);
+        if (m_window != nullptr)
+            glfwDestroyWindow(m_window);
     }
 
     Window::Window(int witdh, int height)
@@ -51,4 +52,4 @@ namespace TiSample::Io
     {
         return TiRHI::WindowHandle(glfwGetWin32Window(m_window));
     }
-}
+} // Ti::Plateform
