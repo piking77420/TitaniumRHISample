@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="VcsDirectoryMappings">
+    <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/ThirdParty/TitaniumRHI" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/ThirdParty/TitaniumRHI/ThirdParty/D3D12MemoryAllocator" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/ThirdParty/TitaniumRHI/ThirdParty/Vulkan-Headers" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/ThirdParty/TitaniumRHI/ThirdParty/VulkanMemoryAllocator" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/ThirdParty/TitaniumRHI/ThirdParty/metal-cpp" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/ThirdParty/TitaniumRHI/out/build/MSVC-x64-debug-DirectX12/_deps/googletest-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/ThirdParty/TitaniumRHI/out/build/MSVC-x64-debug-Vulkan/_deps/googletest-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/ThirdParty/TitaniumShaderCompiler" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/ThirdParty/TitaniumShaderCompiler/ThirdParty/SPIRV-Cross" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/ThirdParty/TitaniumShaderCompiler/out/build/x64-Debug/_deps/googletest-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/ThirdParty/assimp" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/ThirdParty/glfw" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/ThirdParty/stb" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/out/build/x64-Debug/_deps/googletest-src" vcs="Git" />
+  </component>
+</project>
