@@ -9,6 +9,9 @@
 #include <string_view>
 #include <span>
 
+#include <ImGuiIntegration/ImGuiIntegration.hpp>
+#include <imgui.h>
+
 #include <Common/Exemple.hpp>
 #include <Assets/Image.hpp>
 #include <Assets/Texture.hpp>
@@ -37,6 +40,7 @@ public:
         setupSampler();
         setupDescriptorSet();
         setupPipeline();
+        setupImgui();
     }
 
 protected:
@@ -49,6 +53,8 @@ protected:
     TiRHI::DescriptorSet m_set;
 
     std::optional<std::move_only_function<void(TiRHI::CommandList&)>> pendingUpload;
+
+    Ti::ThirdParty::ImguiIntegration m_imguiIntegration;
 
     void setupTexture()
     {
@@ -142,7 +148,15 @@ protected:
         }
     }
 
-    void render(TiRHI::CommandList& cmd, TiRHI::SwapChain& m_swapChain) final
+    void setupImgui()
+    {
+        if (!m_imguiIntegration.build(getDevice(), getWindow(), getSwapChain()))
+        {
+            TI_LOG_ERROR(Core, "Failed to Init Imgui");
+        }
+    }
+
+    void render(TiRHI::CommandList& cmd, TiRHI::SwapChain& swapChain) final
     {
         if (!cmd.beginRecord())
             return;
@@ -158,30 +172,36 @@ protected:
 
         {
             TiRHI::DebugScope _(cmd, "SwapChain Pass"sv, std::array{1.0f, 1.0f, 0.0f, 1.0f});
-            TiRHI::RenderTargets& renderTarget = m_swapChain.getCurrentRenderTargets();
+            TiRHI::RenderTargets& renderTarget = getSwapChain().getCurrentRenderTargets();
 
             TiRHI::Rect2D renderArea{};
-            renderArea.setExtend(m_swapChain.getExtend());
+            renderArea.setExtend(getSwapChain().getExtend());
 
             std::array<TiRHI::ClearValueColor, 1> clearColor;
             clearColor[0].color = AppClearColor;
             TiRHI::BeginRenderPass renderPass{};
             renderPass.setRenderArea(renderArea).setClearColors(clearColor);
 
-            cmd.transitionResource(m_swapChain.getCurrentSwapChainTexture(), TiRHI::ResourceState::Present);
+            cmd.transitionResource(getSwapChain().getCurrentSwapChainTexture(), TiRHI::ResourceState::Present);
             if (cmd.beginRenderPass(renderPass, renderTarget))
             {
                 TiRHI::Viewport viewPort;
-                viewPort.setPosition({0, 0}).setExtend(static_cast<TiRHI::Extend2DF>(m_swapChain.getExtend()));
+                viewPort.setPosition({0, 0}).setExtend(static_cast<TiRHI::Extend2DF>(getSwapChain().getExtend()));
 
                 cmd.setViewPort(viewPort);
 
                 TiRHI::Rect2D scissors;
-                scissors.setOffset({0, 0}).setExtend(m_swapChain.getExtend());
+                scissors.setOffset({0, 0}).setExtend(getSwapChain().getExtend());
                 cmd.setScissors(scissors);
                 cmd.bindPipeline(m_pipeline);
                 cmd.bindDescriptorSet(m_set, 0);
                 cmd.draw(3, 1, 0, 0);
+
+                {
+                    TiRHI::DebugScope _(cmd, "Imgui Pass"sv, std::array{1.0f, 1.0f, 0.0f, 1.0f});
+                    m_imguiIntegration.render(cmd);
+                }
+
                 cmd.endRenderPass();
             }
         }
@@ -190,7 +210,11 @@ protected:
 
     void update() final
     {
-        // NOTHING
+        m_imguiIntegration.newFrame();
+        ImGui::Begin("TestWindow");
+
+        ImGui::End();
+        m_imguiIntegration.update();
     }
 };
 

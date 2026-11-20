@@ -31,6 +31,11 @@ namespace Ti::Plateform
         bool shouldClose() const;
         void prepareForCurrentFrame();
 
+        GLFWwindow* getGlfwWindow() const
+        {
+            return m_window;
+        }
+
         TiRHI::WindowHandle getWindowHandle() const;
 
     private:
