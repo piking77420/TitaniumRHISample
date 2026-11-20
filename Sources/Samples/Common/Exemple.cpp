@@ -93,8 +93,16 @@ namespace Ti::Common
 
         if (!modulesCode)
         {
-            const Compiler::CompileError& error = modulesCode.error();
-            printCompilerError(std::get<Compiler::GetCodeError>(error));
+            if (std::holds_alternative<std::string>(modulesCode.error()))
+            {
+                TI_LOG_FATAL(Exemple, "Failed to compile shader : {}", std::get<std::string>(modulesCode.error()));
+            }
+            else
+            {
+                const Compiler::CompileError& error = modulesCode.error();
+                printCompilerError(std::get<Compiler::GetCodeError>(error));
+            }
+
 
             return {};
         }
