@@ -11,7 +11,7 @@ namespace Ti::Plateform
     public:
         Window() = default;
         ~Window();
-        Window(int witdh, int height);
+        Window(int witdh, int height, const char* windowName);
 
         int getWidth() const
         {
@@ -30,6 +30,11 @@ namespace Ti::Plateform
 
         bool shouldClose() const;
         void prepareForCurrentFrame();
+
+        GLFWwindow* getGlfwWindow() const
+        {
+            return m_window;
+        }
 
         TiRHI::WindowHandle getWindowHandle() const;
 

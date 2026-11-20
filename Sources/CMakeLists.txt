@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.26)
 
 project(Renderer VERSION 0.1.0 LANGUAGES CXX)
 
+add_subdirectory(ThirdParty/Imgui)
+add_subdirectory(ThirdParty/ImGuiIntegration)
+
 add_subdirectory(Shared/Assets)
 add_subdirectory(Shared/Rendering)
 add_subdirectory(Shared/Core)
@@ -17,6 +20,7 @@ set(PRIVATE_DEPENDENCIES
     Plateform
     Assets
     Rendering
+    ImGuiIntegration
 )
 
 
