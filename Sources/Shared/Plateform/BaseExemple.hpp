@@ -42,9 +42,19 @@ namespace Ti::Plateform
             return m_device;
         }
 
-        const TiRHI::SwapChain& getSwapChain()
+        TiRHI::SwapChain& getSwapChain()
         {
             return m_swapChain;
+        }
+
+        const TiRHI::SwapChain& getSwapChain() const
+        {
+            return m_swapChain;
+        }
+
+        Ti::Plateform::Window& getWindow()
+        {
+            return m_window;
         }
 
         static constexpr size_t ImageCount = 3;

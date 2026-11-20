@@ -38,7 +38,7 @@ namespace Ti::Plateform
 
     BaseExemple::BaseExemple(std::string name)
         : App(std::move(name))
-        , m_window(static_cast<int>(WindowWidthBaseSize), static_cast<int>(WindowHeightBaseSize))
+        , m_window(static_cast<int>(WindowWidthBaseSize), static_cast<int>(WindowHeightBaseSize), getName().data())
         , m_rhi(
               []() -> TiRHI::RhiCreate
               {
