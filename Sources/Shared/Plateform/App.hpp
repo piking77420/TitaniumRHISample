@@ -16,6 +16,11 @@ namespace Ti::Plateform
         virtual ~App();
         App(std::string name);
 
+        std::string_view getName() const
+        {
+            return m_name;
+        }
+
     private:
         std::string m_name;
     };

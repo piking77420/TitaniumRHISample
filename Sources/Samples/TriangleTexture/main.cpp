@@ -211,7 +211,9 @@ protected:
     void update() final
     {
         m_imguiIntegration.newFrame();
-        ImGui::Begin("TestWindow");
+        static std::string windowName = [&]()
+        { return std::string(getName()) + " " + std::string(TiRHI::toString(getRHI().getApi())); }();
+        ImGui::Begin(windowName.c_str());
 
         ImGui::End();
         m_imguiIntegration.update();

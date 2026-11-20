@@ -11,7 +11,7 @@ namespace Ti::Plateform
     public:
         Window() = default;
         ~Window();
-        Window(int witdh, int height);
+        Window(int witdh, int height, const char* windowName);
 
         int getWidth() const
         {

@@ -22,12 +22,12 @@ namespace Ti::Plateform
             glfwDestroyWindow(m_window);
     }
 
-    Window::Window(int witdh, int height)
+    Window::Window(int witdh, int height, const char* windowName)
         : m_width(witdh)
         , m_height(height)
     {
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        m_window = glfwCreateWindow(m_width, height, "TitaniumRHISample", nullptr, nullptr);
+        m_window = glfwCreateWindow(m_width, m_height, windowName, nullptr, nullptr);
         if (!m_window)
         {
             std::cerr << "Failed to create GLFW window\n";
