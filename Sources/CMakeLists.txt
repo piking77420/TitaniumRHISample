@@ -21,6 +21,7 @@ set(PRIVATE_DEPENDENCIES
     Assets
     Rendering
     ImGuiIntegration
+    MathLib
 )
 
 

@@ -17,3 +17,6 @@
 [submodule "ThirdParty/imgui"]
 	path = ThirdParty/imgui
 	url = https://github.com/ocornut/imgui.git
+[submodule "ThirdParty/MathLib"]
+	path = ThirdParty/MathLib
+	url = https://github.com/piking77420/MathLib.git
