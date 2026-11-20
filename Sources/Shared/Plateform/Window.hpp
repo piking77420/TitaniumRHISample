@@ -1,15 +1,15 @@
-#ifndef TI_SAMPLE_IO_WINDOW_H
-#define TI_SAMPLE_IO_WINDOW_H
+#ifndef TITANIUM_SAMPLE_PLATEFROM_WINDOW_H
+#define TITANIUM_SAMPLE_PLATEFROM_WINDOW_H
 
 #include <GLFW/glfw3.h>
 #include <Titanium/TitaniumHeader.hpp>
 
-namespace TiSample::Io
+namespace Ti::Plateform
 {
     class Window
     {
     public:
-        Window() = delete;
+        Window() = default;
         ~Window();
         Window(int witdh, int height);
 
@@ -41,6 +41,6 @@ namespace TiSample::Io
 
         static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
     };
-}
+} // Ti::Plateform
 
-#endif // TI_SAMPLE_IO_WINDOW_H
+#endif // TITANIUM_SAMPLE_PLATEFROM_WINDOW_H
