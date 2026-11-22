@@ -1,5 +1,3 @@
-Texture2D<float4> colorTexture : register(t0);
-SamplerState colorSampler : register(s0);
 
 struct VSOutput
 {
@@ -41,7 +39,7 @@ VSOutput VSMain(uint vertexID : SV_VertexID)
 
 float4 PSMain(VSOutput input) : SV_TARGET0
 {
-    float4 texColor = colorTexture.Sample(colorSampler, input.uv);
+    float4 texColor = float4(input.color, 1.0);
 
     return texColor;
 }

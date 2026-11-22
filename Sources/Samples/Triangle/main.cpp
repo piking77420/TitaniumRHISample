@@ -56,44 +56,26 @@ public:
 protected:
     TiRHI::GraphicPipeline m_pipeline;
 
-    void render(TiRHI::CommandList& cmd, TiRHI::SwapChain& m_swapChain) final
+    void onSwapChainRenderPass(TiRHI::CommandList& cmd, TiRHI::SwapChain& swapChain)
     {
-        if (!cmd.beginRecord())
-            return;
-        {
-            TiRHI::DebugScope _(cmd, "SwapChain Pass"sv, std::array{1.0f, 1.0f, 0.0f, 1.0f});
-            TiRHI::RenderTargets& renderTarget = m_swapChain.getCurrentRenderTargets();
+        TiRHI::Viewport viewPort;
+        viewPort.setPosition({0, 0}).setExtend(static_cast<TiRHI::Extend2DF>(swapChain.getExtend()));
 
-            TiRHI::Rect2D renderArea{};
-            renderArea.setExtend(m_swapChain.getExtend());
+        cmd.setViewPort(viewPort);
 
-            std::array<TiRHI::ClearValueColor, 1> clearColor;
-            clearColor[0].color = AppClearColor;
-            TiRHI::BeginRenderPass renderPass{};
-            renderPass.setRenderArea(renderArea).setClearColors(clearColor);
-
-            cmd.transitionResource(m_swapChain.getCurrentSwapChainTexture(), TiRHI::ResourceState::Present);
-            if (cmd.beginRenderPass(renderPass, renderTarget))
-            {
-                TiRHI::Viewport viewPort;
-                viewPort.setPosition({0, 0}).setExtend(static_cast<TiRHI::Extend2DF>(m_swapChain.getExtend()));
-
-                cmd.setViewPort(viewPort);
-
-                TiRHI::Rect2D scissors;
-                scissors.setOffset({0, 0}).setExtend(m_swapChain.getExtend());
-                cmd.setScissors(scissors);
-                cmd.bindPipeline(m_pipeline);
-                cmd.draw(3, 1, 0, 0);
-                cmd.endRenderPass();
-            }
-        }
-        cmd.endRecord();
+        TiRHI::Rect2D scissors;
+        scissors.setOffset({0, 0}).setExtend(swapChain.getExtend());
+        cmd.setScissors(scissors);
+        cmd.bindPipeline(m_pipeline);
+        cmd.draw(3, 1, 0, 0);
     }
 
-    void update() final
+    void onRender([[maybe_unused]] TiRHI::CommandList& cmd, [[maybe_unused]] TiRHI::SwapChain& swapChain)
     {
-        // NOTHING
+    }
+
+    void onUpdate()
+    {
     }
 };
 

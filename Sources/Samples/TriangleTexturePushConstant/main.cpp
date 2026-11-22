@@ -34,15 +34,12 @@ public:
         , m_pipeline(getRHI())
     {
         setupPipeline();
-        setupImgui();
     }
 
 protected:
     std::array<float, 4> m_color = {};
 
     TiRHI::GraphicPipeline m_pipeline;
-
-    Ti::ThirdParty::ImguiIntegration m_imguiIntegration;
 
     void setupPipeline()
     {
@@ -71,67 +68,33 @@ protected:
         }
     }
 
-    void setupImgui()
+    void onRender(TiRHI::CommandList& cmd, TiRHI::SwapChain& swapChain) final
     {
-        if (!m_imguiIntegration.build(getDevice(), getWindow(), getSwapChain()))
-        {
-            TI_LOG_ERROR(Core, "Failed to Init Imgui");
-        }
     }
 
-    void render(TiRHI::CommandList& cmd, TiRHI::SwapChain& swapChain) final
+    void onSwapChainRenderPass(TiRHI::CommandList& cmd, TiRHI::SwapChain& swapChain)
     {
-        if (!cmd.beginRecord())
-            return;
+        TiRHI::Viewport viewPort;
+        viewPort.setPosition({0, 0}).setExtend(static_cast<TiRHI::Extend2DF>(getSwapChain().getExtend()));
 
-        {
-            TiRHI::DebugScope _(cmd, "SwapChain Pass"sv, std::array{1.0f, 1.0f, 0.0f, 1.0f});
-            TiRHI::RenderTargets& renderTarget = getSwapChain().getCurrentRenderTargets();
+        cmd.setViewPort(viewPort);
 
-            TiRHI::Rect2D renderArea{};
-            renderArea.setExtend(getSwapChain().getExtend());
-
-            std::array<TiRHI::ClearValueColor, 1> clearColor;
-            clearColor[0].color = AppClearColor;
-            TiRHI::BeginRenderPass renderPass{};
-            renderPass.setRenderArea(renderArea).setClearColors(clearColor);
-
-            cmd.transitionResource(getSwapChain().getCurrentSwapChainTexture(), TiRHI::ResourceState::Present);
-            if (cmd.beginRenderPass(renderPass, renderTarget))
-            {
-                TiRHI::Viewport viewPort;
-                viewPort.setPosition({0, 0}).setExtend(static_cast<TiRHI::Extend2DF>(getSwapChain().getExtend()));
-
-                cmd.setViewPort(viewPort);
-
-                TiRHI::Rect2D scissors;
-                scissors.setOffset({0, 0}).setExtend(getSwapChain().getExtend());
-                cmd.setScissors(scissors);
-                cmd.bindPipeline(m_pipeline);
-                cmd.pushConstant(m_color.data(), sizeof(m_color));
-                cmd.draw(3, 1, 0, 0);
-
-                {
-                    TiRHI::DebugScope _(cmd, "Imgui Pass"sv, std::array{1.0f, 1.0f, 0.0f, 1.0f});
-                    m_imguiIntegration.render(cmd);
-                }
-
-                cmd.endRenderPass();
-            }
-        }
-        cmd.endRecord();
+        TiRHI::Rect2D scissors;
+        scissors.setOffset({0, 0}).setExtend(getSwapChain().getExtend());
+        cmd.setScissors(scissors);
+        cmd.bindPipeline(m_pipeline);
+        cmd.pushConstant(m_color.data(), sizeof(m_color));
+        cmd.draw(3, 1, 0, 0);
     }
 
-    void update() final
+    void onUpdate() final
     {
-        m_imguiIntegration.newFrame();
         static std::string windowName = [&]()
         { return std::string(getName()) + " " + std::string(TiRHI::toString(getRHI().getApi())); }();
         ImGui::Begin(windowName.c_str());
         ImGui::ColorPicker4("Triangle color", m_color.data(),
                             ImGuiColorEditFlags_Float | ImGuiColorEditFlags_PickerHueWheel);
         ImGui::End();
-        m_imguiIntegration.update();
     }
 };
 

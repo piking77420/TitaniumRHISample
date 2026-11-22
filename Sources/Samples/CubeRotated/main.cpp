@@ -148,7 +148,7 @@ protected:
 
         const float aspect = static_cast<float>(getWindow().getWidth()) / static_cast<float>(getWindow().getHeight());
         const MathLib::Matrix4x4f projection = Ti::Core::Math::perspectiveLH(1.39626f, aspect, 0.1f, 1000.0f);
-        const MathLib::Matrix4x4f view = Ti::Core::Math::viewLH(MathLib::Vector3<float>{0.0f, 0.0f, -15.0f},
+        const MathLib::Matrix4x4f view = Ti::Core::Math::viewLH(MathLib::Vector3<float>{0.0f, 0.0f, -5.0f},
                                                                 MathLib::Vector3<float>{0.0f, 0.0f, 0.0f},
                                                                 MathLib::Vector3<float>{0.0f, 1.0f, 0.0f});
         const MathLib::Matrix4x4f model =
@@ -246,14 +246,13 @@ protected:
     void setupSampler()
     {
         const bool success = m_sampler.setName("Texture Sampler")
-                                 .setMinFilter(TiRHI::Filter::Linear)
-                                 .setMagFilter(TiRHI::Filter::Linear)
-                                 .setMipMapFilter(TiRHI::Filter::Linear)
+                                 .setMinFilter(TiRHI::Filter::Nearest)
+                                 .setMagFilter(TiRHI::Filter::Nearest)
+                                 .setMipMapFilter(TiRHI::Filter::Nearest)
                                  .setAddressModeU(TiRHI::SamplerAddressMode::Repeat)
                                  .setAddressModeV(TiRHI::SamplerAddressMode::Repeat)
                                  .setAddressModeW(TiRHI::SamplerAddressMode::Repeat)
                                  .setMinLod(0.0f)
-                                 .setMaxLod(0.0f) // Only mip level 0 is uploaded.
                                  .setAnisotropyEnabled(false)
                                  .setDepthCompareEnabled(false)
                                  .build(getDevice());
