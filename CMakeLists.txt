@@ -16,6 +16,13 @@ endif()
 add_subdirectory("${THIRD_PARTY_DIR}/TitaniumShaderCompiler")
 add_subdirectory("${THIRD_PARTY_DIR}/TitaniumRHI")
 add_subdirectory("${THIRD_PARTY_DIR}/glfw")
+## ignore Imgui exemples
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
+    "${THIRD_PARTY_DIR}/Imgui/examples*"
+)
+list(FILTER SOURCES EXCLUDE REGEX "\\.slnx$")
+
+
 
 set(MATHLIB_USE_INTRINSIC true)
 set(MATHLIB_USE_FMA true)

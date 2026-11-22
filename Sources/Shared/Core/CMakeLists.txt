@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.26)
 
 set(SOURCES
+    Math/Projection.cpp
+    Math/Projection.hpp
+    Math/View.cpp
+    Math/View.hpp
     EnumToString.hpp
     Log.cpp
     Log.hpp
@@ -15,4 +19,8 @@ target_include_directories(
     Core
     PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}/.."
+)
+
+target_link_libraries(Core
+        MathLib
 )

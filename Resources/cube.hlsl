@@ -1,6 +1,11 @@
 Texture2D<float4> colorTexture : register(t0);
 SamplerState colorSampler : register(s0);
 
+cbuffer TransformBuffer : register(b1)
+{
+    float4x4 wvp;
+};
+
 struct VSInput
 {
     float3 position : TEXCOORD0;
@@ -17,7 +22,7 @@ VSOutput VSMain(VSInput input)
 {
     VSOutput output;
 
-    output.position = float4(input.position, 1.0);
+    output.position = mul(wvp, float4(input.position, 1.0f));
     output.uv = input.uv;
 
     return output;

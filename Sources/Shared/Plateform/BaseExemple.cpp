@@ -1,5 +1,6 @@
 #include <Plateform/BaseExemple.hpp>
 #include <Core/Log.hpp>
+using namespace std::literals;
 
 void debugCallBack(const std::wstring& message, TiRHI::RhiApi api, TiRHI::RhiMessageSeverity severity)
 {
@@ -83,6 +84,11 @@ namespace Ti::Plateform
                 .setName("CommandList");
             m_cmdList.build(m_device);
         // clang-format on
+
+        if (!m_imguiIntegration.build(getDevice(), getWindow(), getSwapChain()))
+        {
+            TI_LOG_ERROR(Core, "Failed to Init Imgui");
+        }
     }
 
     void BaseExemple::handleResize()
@@ -95,6 +101,56 @@ namespace Ti::Plateform
         // m_device.wait();
         m_swapChain.setWidth(m_window.getWidth()).setHeight(m_window.getHeight());
         m_swapChain.recreateSwapChain(m_device, m_surface);
+    }
+
+    void BaseExemple::render(TiRHI::CommandList& cmd, TiRHI::SwapChain& swapChain)
+    {
+        if (!cmd.beginRecord())
+            return;
+
+        if (!m_pendingRenderCommand.empty())
+        {
+            TiRHI::DebugScope _(cmd, "Upload"sv, std::array{0.0f, 0.0f, 1.0f, 1.0f});
+            for (auto& f : m_pendingRenderCommand)
+                f(cmd);
+            m_pendingRenderCommand.clear();
+        }
+
+        onRender(cmd, swapChain);
+
+        {
+            TiRHI::DebugScope _(cmd, "SwapChain Pass"sv, std::array{1.0f, 1.0f, 0.0f, 1.0f});
+            TiRHI::RenderTargets& renderTarget = getSwapChain().getCurrentRenderTargets();
+
+            TiRHI::Rect2D renderArea{};
+            renderArea.setExtend(getSwapChain().getExtend());
+
+            std::array<TiRHI::ClearValueColor, 1> clearColor;
+            clearColor[0].color = AppClearColor;
+            TiRHI::BeginRenderPass renderPass{};
+            renderPass.setRenderArea(renderArea).setClearColors(clearColor);
+
+            cmd.transitionResource(getSwapChain().getCurrentSwapChainTexture(), TiRHI::ResourceState::Present);
+            if (cmd.beginRenderPass(renderPass, renderTarget))
+            {
+                onSwapChainRenderPass(cmd, swapChain);
+
+                {
+                    TiRHI::DebugScope _(cmd, "Imgui Pass"sv, std::array{1.0f, 1.0f, 0.0f, 1.0f});
+                    m_imguiIntegration.render(cmd);
+                }
+
+                cmd.endRenderPass();
+            }
+        }
+        cmd.endRecord();
+    }
+
+    void BaseExemple::update()
+    {
+        m_imguiIntegration.newFrame();
+        onUpdate();
+        m_imguiIntegration.update();
     }
 
     void BaseExemple::run()

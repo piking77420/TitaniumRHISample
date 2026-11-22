@@ -9,6 +9,7 @@
 #include <Plateform/Window.hpp>
 #include <Plateform/App.hpp>
 #include <Io/Io.hpp>
+#include <ImGuiIntegration/ImGuiIntegration.hpp>
 
 namespace Ti::Plateform
 {
@@ -28,9 +29,15 @@ namespace Ti::Plateform
     protected:
         void handleResize();
 
-        virtual void render(TiRHI::CommandList& cmd, TiRHI::SwapChain& m_swapChain) = 0;
+        void render(TiRHI::CommandList& cmd, TiRHI::SwapChain& swapChain);
 
-        virtual void update() = 0;
+        void update();
+
+        virtual void onRender(TiRHI::CommandList& cmd, TiRHI::SwapChain& swapChain) = 0;
+
+        virtual void onSwapChainRenderPass(TiRHI::CommandList& cmd, TiRHI::SwapChain& swapChain) = 0;
+
+        virtual void onUpdate() = 0;
 
         TiRHI::RHI& getRHI()
         {
@@ -57,6 +64,11 @@ namespace Ti::Plateform
             return m_window;
         }
 
+        void pushRenderCommand(std::move_only_function<void(TiRHI::CommandList&)>&& func)
+        {
+            m_pendingRenderCommand.emplace_back(std::move(func));
+        }
+
         static constexpr size_t ImageCount = 3;
 
         static constexpr std::array AppClearColor{0.1f, 0.2f, 0.4f, 1.0f};
@@ -75,6 +87,10 @@ namespace Ti::Plateform
         TiRHI::SwapChain m_swapChain;
 
         TiRHI::CommandList m_cmdList;
+
+        Ti::ThirdParty::ImguiIntegration m_imguiIntegration;
+
+        std::vector<std::move_only_function<void(TiRHI::CommandList&)>> m_pendingRenderCommand;
     };
 
 } // Ti::Core::Platerform
