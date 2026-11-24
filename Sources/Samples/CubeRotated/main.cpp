@@ -8,6 +8,7 @@
 #include <string>
 #include <string_view>
 #include <span>
+#include <optional>
 
 #include <ImGuiIntegration/ImGuiIntegration.hpp>
 #include <imgui.h>
@@ -23,8 +24,6 @@
 using namespace std::literals;
 using namespace Ti::ShaderCompiler;
 namespace fs = std::filesystem;
-#undef min
-#undef max
 #include <Matrix4x4.hpp>
 #include <Vector3.hpp>
 #include <Vector2.hpp>
@@ -110,7 +109,7 @@ public:
         , m_indexBuffer(getDevice())
         , m_rootConstantBuffer(getDevice())
         , m_cubeSet(getDevice())
-        , m_simplePass(getDevice())
+        , m_simplePass(*this)
         , m_cubePipeline(getDevice())
         , m_drawTextureToScreenTriangle(getDevice())
     {
@@ -119,7 +118,7 @@ public:
         setupVertexDescription();
         setupBuffer();
         setupDescriptorSet();
-        m_simplePass.build(*this);
+        m_simplePass->build(*this);
         setupPipeline();
     }
 
@@ -140,14 +139,13 @@ protected:
         TiRHI::RenderPassDescriptor renderPassDescriptor;
         TiRHI::DescriptorSet colorTextureSet;
 
-        ScenePass(TiRHI::Device& device)
-            : colorTexture(device)
-            , renderPassDescriptor(device)
-            , renderTargets(device)
-            , depthTexture(device)
-            , colorTextureSet(device)
+        ScenePass(CubeRotated& cubeRotated)
+            : colorTexture(cubeRotated.getDevice())
+            , renderPassDescriptor(cubeRotated.getDevice())
+            , renderTargets(cubeRotated.getDevice())
+            , depthTexture(cubeRotated.getDevice())
+            , colorTextureSet(cubeRotated.getDevice())
         {
-
         }
 
         void onResize(CubeRotated& cubeRotated)
@@ -155,23 +153,23 @@ protected:
             const auto& swapChain = cubeRotated.getSwapChain();
 
             if (!colorTexture.setName("SceneColor")
-                    .setFlags(TiRHI::TextureFlags::RenderTarget | TiRHI::TextureFlags::ShaderResource)
-                    .setType(TiRHI::TextureType::Texture2D)
-                    .setWidth(static_cast<uint32_t>(swapChain.getWidth()))
-                    .setHeight(static_cast<uint32_t>(swapChain.getHeight()))
-                    .setFormat(swapChain.getFormat())
-                    .build())
+                     .setFlags(TiRHI::TextureFlags::RenderTarget | TiRHI::TextureFlags::ShaderResource)
+                     .setType(TiRHI::TextureType::Texture2D)
+                     .setWidth(static_cast<uint32_t>(swapChain.getWidth()))
+                     .setHeight(static_cast<uint32_t>(swapChain.getHeight()))
+                     .setFormat(swapChain.getFormat())
+                     .build())
             {
                 TI_LOG_FATAL(Rendering, "Failed to build {}", colorTexture.getName());
             }
 
             if (!depthTexture.setName("SceneDepth")
-                    .setFlags(TiRHI::TextureFlags::RenderTarget | TiRHI::TextureFlags::ShaderResource)
-                    .setType(TiRHI::TextureType::Texture2D)
-                    .setWidth(static_cast<uint32_t>(swapChain.getWidth()))
-                    .setHeight(static_cast<uint32_t>(swapChain.getHeight()))
-                    .setFormat(TiRHI::Format::D32FloatS8UInt)
-                    .build())
+                     .setFlags(TiRHI::TextureFlags::RenderTarget | TiRHI::TextureFlags::ShaderResource)
+                     .setType(TiRHI::TextureType::Texture2D)
+                     .setWidth(static_cast<uint32_t>(swapChain.getWidth()))
+                     .setHeight(static_cast<uint32_t>(swapChain.getHeight()))
+                     .setFormat(TiRHI::Format::D32FloatS8UInt)
+                     .build())
             {
                 TI_LOG_FATAL(Rendering, "Failed to build {}", depthTexture.getName());
             }
@@ -193,7 +191,7 @@ protected:
                 .setFinalState(TiRHI::ResourceState::ShaderResource);
 
             if (!renderPassDescriptor.setName("Scene RenderPassDescriptor")
-                     .setColorAttachements(std::array{colorDescriptor})
+                     .setColorAttachments(std::array{colorDescriptor})
                      .setDepthAttachement(depthDescriptor)
                      .build())
             {
@@ -210,9 +208,9 @@ protected:
             }
 
             if (!colorTextureSet.setName("ColorTextureSet")
-                    .bindSampledTexture(TiRHI::ShaderStageFlags::Pixel, &colorTexture,
-                                        &cubeRotated.m_samplerNearestClamp, 0)
-                    .build())
+                     .bindSampledTexture(TiRHI::ShaderStageFlags::Pixel, &colorTexture,
+                                         &cubeRotated.m_samplerNearestClamp, 0)
+                     .build())
             {
                 TI_LOG_FATAL(Rendering, "Failed to build {}", colorTextureSet.getName());
             }
@@ -220,14 +218,8 @@ protected:
 
         void build(CubeRotated& cubeRotated)
         {
-            colorTexture.~Texture();
-            depthTexture.~Texture();
-            renderTargets.~RenderTargets();
-            renderPassDescriptor.~RenderPassDescriptor();
-            colorTextureSet.~DescriptorSet();
             onResize(cubeRotated);
         };
-
     };
 
     TiRHI::Texture m_texture;
@@ -244,16 +236,17 @@ protected:
 
     std::array<TiRHI::VertexInputAttributeDescription, 2> m_vertexInputAttributeDescription;
 
-    ScenePass m_simplePass;
+    std::optional<ScenePass> m_simplePass;
 
-    
     TiRHI::GraphicPipeline m_drawTextureToScreenTriangle;
 
     TiRHI::GraphicPipeline m_cubePipeline;
 
     void onResizeWindow() final
     {
-        m_simplePass.onResize(*this);
+        m_simplePass.reset();
+        m_simplePass.emplace(*this);
+        m_simplePass->build(*this);
     }
 
     void onUpdate() final
@@ -289,8 +282,8 @@ protected:
     {
         // nothing
         {
-            cmd.transitionResource(m_simplePass.colorTexture, TiRHI::ResourceState::Undefined);
-            cmd.transitionResource(m_simplePass.depthTexture, TiRHI::ResourceState::Undefined);
+            cmd.transitionResource(m_simplePass->colorTexture, TiRHI::ResourceState::Undefined);
+            cmd.transitionResource(m_simplePass->depthTexture, TiRHI::ResourceState::Undefined);
 
             TiRHI::Rect2D renderArea{};
             renderArea.setExtend(getSwapChain().getExtend());
@@ -305,11 +298,11 @@ protected:
             renderPass.setRenderArea(renderArea).setClearColors(clearColor).setClearDepthStencil(clearColorStencil);
 
             TiRHI::DebugScope _(cmd, "Scene Pass"sv, std::array{0.1f, 1.0f, 0.0f, 1.0f});
-            cmd.beginRenderPass(renderPass, m_simplePass.renderTargets);
+            cmd.beginRenderPass(renderPass, m_simplePass->renderTargets);
             TiRHI::Viewport viewPort;
             viewPort.setPosition({0, 0}).setExtend(
-                TiRHI::Extend2DF{static_cast<float>(m_simplePass.renderTargets.getWidth()),
-                                 static_cast<float>(m_simplePass.renderTargets.getHeight())});
+                TiRHI::Extend2DF{static_cast<float>(m_simplePass->renderTargets.getWidth()),
+                                 static_cast<float>(m_simplePass->renderTargets.getHeight())});
             cmd.setViewPort(viewPort);
 
             TiRHI::Rect2D scissors;
@@ -336,7 +329,7 @@ protected:
         scissors.setOffset({0, 0}).setExtend(getSwapChain().getExtend());
         cmd.setScissors(scissors);
         cmd.bindPipeline(m_drawTextureToScreenTriangle);
-        cmd.bindDescriptorSet(m_simplePass.colorTextureSet, 0);
+        cmd.bindDescriptorSet(m_simplePass->colorTextureSet, 0);
 
         cmd.draw(3, 1, 0, 0);
     }
@@ -397,18 +390,18 @@ protected:
     void setupSampler()
     {
         bool success = m_samplerNearestRepeat.setName("SamplerNearestRepeat")
-                                 .setMinFilter(TiRHI::Filter::Nearest)
-                                 .setMagFilter(TiRHI::Filter::Nearest)
-                                 .setMipMapFilter(TiRHI::Filter::Nearest)
-                                 .setAddressModeU(TiRHI::SamplerAddressMode::Repeat)
-                                 .setAddressModeV(TiRHI::SamplerAddressMode::Repeat)
-                                 .setAddressModeW(TiRHI::SamplerAddressMode::Repeat)
-                                 .setMinLod(0.0f)
-                                 .setAnisotropyEnabled(false)
-                                 .setDepthCompareEnabled(false)
-                                 .build();
+                           .setMinFilter(TiRHI::Filter::Nearest)
+                           .setMagFilter(TiRHI::Filter::Nearest)
+                           .setMipMapFilter(TiRHI::Filter::Nearest)
+                           .setAddressModeU(TiRHI::SamplerAddressMode::Repeat)
+                           .setAddressModeV(TiRHI::SamplerAddressMode::Repeat)
+                           .setAddressModeW(TiRHI::SamplerAddressMode::Repeat)
+                           .setMinLod(0.0f)
+                           .setAnisotropyEnabled(false)
+                           .setDepthCompareEnabled(false)
+                           .build();
 
-         success = success && m_samplerNearestClamp.setName("mSamplerNearestClamp")
+        success = success && m_samplerNearestClamp.setName("mSamplerNearestClamp")
                                  .setMinFilter(TiRHI::Filter::Nearest)
                                  .setMagFilter(TiRHI::Filter::Nearest)
                                  .setMipMapFilter(TiRHI::Filter::Nearest)
@@ -429,10 +422,9 @@ protected:
     {
         const fs::path resourceDir = fs::path(TITANIUM_RESOURCE_DIR);
 
-        auto compilePsoVertexFrag =
-            [&](std::string_view shaderName, std::wstring_view vertexModuleOutPutName,
+        auto compilePsoVertexFrag = [&](std::string_view shaderName, std::wstring_view vertexModuleOutPutName,
                                         std::wstring_view pixelModuleOutPutName) -> TiRHI::GraphicPipeline
-            {
+        {
             const std::vector<Compiler::ShaderEntryPoint> entryPoint = {
                 Compiler::ShaderEntryPoint{.stage = Compiler::ShaderStage::Vertex,
                                            .entryPoint = L"VSMain"sv,
@@ -441,52 +433,50 @@ protected:
                                            .entryPoint = L"PSMain"sv,
                                            .outPutModuleName = pixelModuleOutPutName}};
 
-                    std::vector<CompileModuleData> moduleDatas =
+            std::vector<CompileModuleData> moduleDatas =
                 compileShader((resourceDir / shaderName).generic_string().c_str(), entryPoint);
 
-                TiRHI::GraphicPipeline pipeline(getDevice());
-                for (auto& moduleDatas : moduleDatas)
-                    pipeline.addModule(moduleDatas.stage, std::move(moduleDatas.data), std::move(moduleDatas.entryPoint));
+            TiRHI::GraphicPipeline pipeline(getDevice());
+            for (auto& moduleDatas : moduleDatas)
+                pipeline.addModule(moduleDatas.stage, std::move(moduleDatas.data), std::move(moduleDatas.entryPoint));
 
-                return std::move(pipeline);
-            };
+            return std::move(pipeline);
+        };
 
         m_drawTextureToScreenTriangle = std::move(compilePsoVertexFrag("drawTextureToScreenTriangle.hlsl"sv,
                                                                        L"drawTextureToScreenTriangle.vert.spriv",
                                                                        L"drawTextureToScreenTriangle.pixel.spriv"));
 
-         if (!m_drawTextureToScreenTriangle.setName("DrawTextureToScreenTriangle Pipeline")
+        if (!m_drawTextureToScreenTriangle.setName("DrawTextureToScreenTriangle Pipeline")
                  .setDescriptorSetLayoutEntries(std::array{TiRHI::GraphicPipeline::DescriptorSetLayoutEntry{
-                     m_simplePass.colorTextureSet.getBindingsLayout(), 0}})
+                     m_simplePass->colorTextureSet.getBindingsLayout(), 0}})
                  .setRenderPassDescritptor(&getSwapChain().getRenderPassDescriptor())
                  .build())
         {
-             TI_LOG_FATAL(Core, "Failed to build pipeline {}", m_drawTextureToScreenTriangle.getName());
+            TI_LOG_FATAL(Core, "Failed to build pipeline {}", m_drawTextureToScreenTriangle.getName());
         }
-
 
         m_cubePipeline = std::move(compilePsoVertexFrag("cube.hlsl"sv, L"cube.vert.spriv", L"cube.pixel.spriv"));
 
-         if (!m_cubePipeline.setName("Cube Pipeline")
+        if (!m_cubePipeline.setName("Cube Pipeline")
                  .setDescriptorSetLayoutEntries(
                      std::array{TiRHI::GraphicPipeline::DescriptorSetLayoutEntry{m_cubeSet.getBindingsLayout(), 0}})
                  .setVertexBindingDescription(m_vertexBindingDescription)
                  .setVertexInputAttributeDescription(m_vertexInputAttributeDescription)
-                 .setRenderPassDescritptor(&m_simplePass.renderPassDescriptor)
-                 .setFrontFace(TiRHI::FrontFace::Clockwise) // fix for vulkan since dxc use the flag invert y
-                 .setCullModeFlag(TiRHI::CullModeFlag::Back)
+                 .setRenderPassDescritptor(&m_simplePass->renderPassDescriptor)
                  .build())
-         {
+        {
             TI_LOG_FATAL(Core, "Failed to build pipeline {}", m_cubePipeline.getName());
-         }
+        }
     }
 
     void setupDescriptorSet()
     {
-        const bool success = m_cubeSet.setName("Cube Set")
-                                 .bindSampledTexture(TiRHI::ShaderStageFlags::Pixel, &m_texture, &m_samplerNearestRepeat, 0)
-                                 .bindConstantBuffer(TiRHI::ShaderStageFlags::Vertex, &m_rootConstantBuffer, 1)
-                                 .build();
+        const bool success =
+            m_cubeSet.setName("Cube Set")
+                .bindSampledTexture(TiRHI::ShaderStageFlags::Pixel, &m_texture, &m_samplerNearestRepeat, 0)
+                .bindConstantBuffer(TiRHI::ShaderStageFlags::Vertex, &m_rootConstantBuffer, 1)
+                .build();
 
         if (!success)
         {
