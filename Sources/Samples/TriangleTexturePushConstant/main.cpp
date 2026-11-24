@@ -31,7 +31,7 @@ public:
 
     TriangleTexturePushConstant(std::string name)
         : Ti::Common::Exemple(std::move(name))
-        , m_pipeline(getRHI())
+        , m_cubePipeline(getRHI())
     {
         setupPipeline();
     }
@@ -39,7 +39,7 @@ public:
 protected:
     std::array<float, 4> m_color = {};
 
-    TiRHI::GraphicPipeline m_pipeline;
+    TiRHI::GraphicPipeline m_cubePipeline;
 
     void setupPipeline()
     {
@@ -55,11 +55,11 @@ protected:
         std::vector<CompileModuleData> moduleDatas = compileShader(resourceDir.generic_string().c_str(), entryPoint);
 
         for (auto& moduleDatas : moduleDatas)
-            m_pipeline.addModule(moduleDatas.stage, std::move(moduleDatas.data), std::move(moduleDatas.entryPoint));
+            m_cubePipeline.addModule(moduleDatas.stage, std::move(moduleDatas.data), std::move(moduleDatas.entryPoint));
 
         const TiRHI::PushConstant pushConstant{.flag = TiRHI::ShaderStageFlags::Pixel, .size = sizeof(m_color)};
 
-        if (!m_pipeline.setName("Base Pipeline")
+        if (!m_cubePipeline.setName("Base Pipeline")
                  .setPushConstant(pushConstant)
                  .setRenderPassDescritptor(&getSwapChain().getRenderPassDescriptor())
                  .build(getDevice()))
@@ -82,7 +82,7 @@ protected:
         TiRHI::Rect2D scissors;
         scissors.setOffset({0, 0}).setExtend(getSwapChain().getExtend());
         cmd.setScissors(scissors);
-        cmd.bindPipeline(m_pipeline);
+        cmd.bindPipeline(m_cubePipeline);
         cmd.pushConstant(m_color.data(), sizeof(m_color));
         cmd.draw(3, 1, 0, 0);
     }

@@ -39,6 +39,8 @@ namespace Ti::Plateform
 
         virtual void onUpdate() = 0;
 
+        virtual void onResizeWindow() {};
+
         TiRHI::RHI& getRHI()
         {
             return m_rhi;

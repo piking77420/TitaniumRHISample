@@ -32,9 +32,9 @@ public:
     TriangleTexturedExemple(std::string name)
         : Ti::Common::Exemple(std::move(name))
         , m_texture(getRHI())
-        , m_sampler(getRHI())
-        , m_pipeline(getRHI())
-        , m_set(getRHI())
+        , m_samplerNearestRepeat(getRHI())
+        , m_cubePipeline(getRHI())
+        , m_cubeSet(getRHI())
     {
         setupTexture();
         setupSampler();
@@ -45,11 +45,11 @@ public:
 protected:
     TiRHI::Texture m_texture;
 
-    TiRHI::Sampler m_sampler;
+    TiRHI::Sampler m_samplerNearestRepeat;
 
-    TiRHI::GraphicPipeline m_pipeline;
+    TiRHI::GraphicPipeline m_cubePipeline;
 
-    TiRHI::DescriptorSet m_set;
+    TiRHI::DescriptorSet m_cubeSet;
 
     void setupTexture()
     {
@@ -87,7 +87,7 @@ protected:
 
     void setupSampler()
     {
-        const bool success = m_sampler.setName("Texture Sampler")
+        const bool success = m_samplerNearestRepeat.setName("Texture Sampler")
                                  .setMinFilter(TiRHI::Filter::Linear)
                                  .setMagFilter(TiRHI::Filter::Linear)
                                  .setMipMapFilter(TiRHI::Filter::Linear)
@@ -119,11 +119,11 @@ protected:
         std::vector<CompileModuleData> moduleDatas = compileShader(resourceDir.generic_string().c_str(), entryPoint);
 
         for (auto& moduleDatas : moduleDatas)
-            m_pipeline.addModule(moduleDatas.stage, std::move(moduleDatas.data), std::move(moduleDatas.entryPoint));
+            m_cubePipeline.addModule(moduleDatas.stage, std::move(moduleDatas.data), std::move(moduleDatas.entryPoint));
 
-        if (!m_pipeline.setName("Base Pipeline")
+        if (!m_cubePipeline.setName("Base Pipeline")
                  .setDescriptorSetLayoutEntries(
-                     std::array{TiRHI::GraphicPipeline::DescriptorSetLayoutEntry{m_set.getBindingsLayout(), 0}})
+                     std::array{TiRHI::GraphicPipeline::DescriptorSetLayoutEntry{m_cubeSet.getBindingsLayout(), 0}})
                  .setRenderPassDescritptor(&getSwapChain().getRenderPassDescriptor())
                  .build(getDevice()))
         {
@@ -133,8 +133,8 @@ protected:
 
     void setupDescriptorSet()
     {
-        const bool success = m_set.setName("Texture Descriptor Set")
-                                 .bindSampledTexture(TiRHI::ShaderStageFlags::Pixel, &m_texture, &m_sampler, 0)
+        const bool success = m_cubeSet.setName("Texture Descriptor Set")
+                                 .bindSampledTexture(TiRHI::ShaderStageFlags::Pixel, &m_texture, &m_samplerNearestRepeat, 0)
                                  .build(getDevice());
 
         if (!success)
@@ -161,8 +161,8 @@ protected:
         TiRHI::Rect2D scissors;
         scissors.setOffset({0, 0}).setExtend(getSwapChain().getExtend());
         cmd.setScissors(scissors);
-        cmd.bindPipeline(m_pipeline);
-        cmd.bindDescriptorSet(m_set, 0);
+        cmd.bindPipeline(m_cubePipeline);
+        cmd.bindDescriptorSet(m_cubeSet, 0);
         cmd.draw(3, 1, 0, 0);
     }
 };

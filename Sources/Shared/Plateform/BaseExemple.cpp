@@ -50,10 +50,10 @@ namespace Ti::Plateform
 
                   return create;
               }())
-        , m_device(m_rhi)
-        , m_surface(m_rhi)
-        , m_swapChain(m_rhi)
-        , m_cmdList(m_rhi)
+        , m_device(getRHI())
+        , m_surface(getDevice())
+        , m_swapChain(getDevice())
+        , m_cmdList(getDevice())
     {
         // clang-format off
         
@@ -64,7 +64,7 @@ namespace Ti::Plateform
 
         // clang-format off
         m_device.setName("My Device")
-                .build(m_rhi, m_surface, m_rhi.getAdapters());
+                .build(m_surface, m_rhi.getAdapters());
         TI_LOG_INFO(Core, "Device Choosen : {}",  m_device.getSourceAdapter(m_rhi).getName());
         // clang-format 
         
@@ -76,13 +76,13 @@ namespace Ti::Plateform
             .setName("SwapChain")
             .setVsync(true)
             .setImageCount(ImageCount)
-            .build(m_device, m_surface);
+            .build(m_surface);
          // clang-format 
 
             // clang-format off
             m_cmdList
                 .setName("CommandList");
-            m_cmdList.build(m_device);
+            m_cmdList.build();
         // clang-format on
 
         if (!m_imguiIntegration.build(getDevice(), getWindow(), getSwapChain()))
@@ -100,7 +100,8 @@ namespace Ti::Plateform
         // To avoid device wait we need to use deferred destroy
         // m_device.wait();
         m_swapChain.setWidth(m_window.getWidth()).setHeight(m_window.getHeight());
-        m_swapChain.recreateSwapChain(m_device, m_surface);
+        m_swapChain.recreateSwapChain(m_surface);
+        onResizeWindow();
     }
 
     void BaseExemple::render(TiRHI::CommandList& cmd, TiRHI::SwapChain& swapChain)
@@ -165,7 +166,7 @@ namespace Ti::Plateform
                 handleResize();
                 m_device.beginFrame();
 
-                std::array frames = {m_swapChain.acquireNextImage(m_device)};
+                std::array frames = {m_swapChain.acquireNextImage()};
 
                 if (frames[0].getSucces())
                 {

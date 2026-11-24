@@ -26,7 +26,7 @@ public:
 
     TriangleExemple(std::string name)
         : Ti::Common::Exemple(std::move(name))
-        , m_pipeline(getRHI())
+        , m_cubePipeline(getRHI())
     {
         using namespace Ti::ShaderCompiler;
         namespace fs = std::filesystem;
@@ -43,9 +43,9 @@ public:
         std::vector<CompileModuleData> moduleDatas = compileShader(resourceDir.generic_string().c_str(), entryPoint);
 
         for (auto& moduleDatas : moduleDatas)
-            m_pipeline.addModule(moduleDatas.stage, std::move(moduleDatas.data), std::move(moduleDatas.entryPoint));
+            m_cubePipeline.addModule(moduleDatas.stage, std::move(moduleDatas.data), std::move(moduleDatas.entryPoint));
 
-        if (!m_pipeline.setName("Base Pipeline")
+        if (!m_cubePipeline.setName("Base Pipeline")
                  .setRenderPassDescritptor(&getSwapChain().getRenderPassDescriptor())
                  .build(getDevice()))
         {
@@ -54,7 +54,7 @@ public:
     }
 
 protected:
-    TiRHI::GraphicPipeline m_pipeline;
+    TiRHI::GraphicPipeline m_cubePipeline;
 
     void onSwapChainRenderPass(TiRHI::CommandList& cmd, TiRHI::SwapChain& swapChain)
     {
@@ -66,7 +66,7 @@ protected:
         TiRHI::Rect2D scissors;
         scissors.setOffset({0, 0}).setExtend(swapChain.getExtend());
         cmd.setScissors(scissors);
-        cmd.bindPipeline(m_pipeline);
+        cmd.bindPipeline(m_cubePipeline);
         cmd.draw(3, 1, 0, 0);
     }
 

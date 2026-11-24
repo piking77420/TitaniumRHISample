@@ -93,7 +93,7 @@ namespace Ti::ThirdParty
         info.RTVFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
         info.DSVFormat = DXGI_FORMAT_UNKNOWN;
 
-        // Your existing shader-visible CBV/SRV/UAV heap
+        // Your existing shader-visible CBV/SRV/UAV heap    
         info.SrvDescriptorHeap = TiRHI::Device::Private::getDescriptorAllocatorCbvSrvUav(*m_device).getHeap().Get();
 
         info.UserData = const_cast<TiRHI::Device*>(m_device);
