@@ -83,11 +83,21 @@ namespace Ti::Common
             return Compiler::ApiTarget::Spirv;
         };
 
+        std::vector<std::wstring_view> defines;
+#if defined(TITANIUM_VULKAN)
+        defines.push_back(L"VULKAN=1");
+#elif defined(TITANIUM_DIRECT_X12)
+        defines.push_back(L"DIRECT_X12=1");
+#else
+#error "Unsupported graphics API"
+#endif
+
         Compiler::GetCodeInfo info;
         // clang-format off
         info.setCode(std::span(data.get(), size))
         .setApiTarget(getShaderCompilerApi())
-        .setEntryPoints(shaderEntryPoint);
+        .setEntryPoints(shaderEntryPoint)
+            .setDefines(defines);
 
         std::expected modulesCode = m_shaderCompiler.getCode(info);
 

@@ -242,6 +242,8 @@ protected:
 
     TiRHI::GraphicPipeline m_cubePipeline;
 
+    MathLib::Vector3f m_cubePosition = MathLib::Vector3f::zero();
+
     void onResizeWindow() final
     {
         m_simplePass.reset();
@@ -254,7 +256,7 @@ protected:
         static std::string windowName = [&]()
         { return std::string(getName()) + " " + std::string(TiRHI::toString(getRHI().getApi())); }();
         ImGui::Begin(windowName.c_str());
-
+        ImGui::DragFloat3("Postion", reinterpret_cast<float*>(&m_cubePosition));
         ImGui::End();
 
         const float aspect = static_cast<float>(getWindow().getWidth()) / static_cast<float>(getWindow().getHeight());
@@ -263,7 +265,7 @@ protected:
                                                                 MathLib::Vector3<float>{0.0f, 0.0f, 0.0f},
                                                                 MathLib::Vector3<float>{0.0f, 1.0f, 0.0f});
         const MathLib::Matrix4x4f model =
-            MathLib::trs<float>(MathLib::Vector3<float>{0.0f, 0.0f, 0.0f},                    // Translation
+            MathLib::trs<float>(m_cubePosition,                                               // Translation
                                 MathLib::Vector3<float>{0.0f, (float)ImGui::GetTime(), 0.0f}, // Rotation (radians)
                                 MathLib::Vector3<float>{1.0f, 1.0f, 1.0f}                     // Scale
             );

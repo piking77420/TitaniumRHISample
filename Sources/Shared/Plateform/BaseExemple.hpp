@@ -9,7 +9,7 @@
 #include <Plateform/Window.hpp>
 #include <Plateform/App.hpp>
 #include <Io/Io.hpp>
-#include <ImGuiIntegration/ImGuiIntegration.hpp>
+#include <ImGuiIntegration/ImGuiIntegration.hpp>*
 
 namespace Ti::Plateform
 {
@@ -42,6 +42,11 @@ namespace Ti::Plateform
         virtual void onResizeWindow() {};
 
         TiRHI::RHI& getRHI()
+        {
+            return m_rhi;
+        }
+
+        const TiRHI::RHI& getRHI() const
         {
             return m_rhi;
         }

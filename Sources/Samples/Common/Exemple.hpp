@@ -40,6 +40,7 @@ namespace Ti::Common
         [[nodiscard]] std::vector<CompileModuleData>
         compileShader(const char* filePath,
                       const std::span<const Ti::ShaderCompiler::Compiler::ShaderEntryPoint>& shaderEntryPoint);
+
     };
 
 } // Ti::Common

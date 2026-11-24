@@ -33,7 +33,7 @@ VSOutput VSMain(uint vertexID : SV_VertexID)
     output.position = float4(positions[vertexID], 0.0, 1.0);
     output.color = colors[vertexID];
     output.uv = uvs[vertexID];
-
+    
     return output;
 }
 

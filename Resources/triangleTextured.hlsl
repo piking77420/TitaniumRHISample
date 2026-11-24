@@ -36,6 +36,7 @@ VSOutput VSMain(uint vertexID : SV_VertexID)
     output.color = colors[vertexID];
     output.uv = uvs[vertexID];
 
+    
     return output;
 }
 

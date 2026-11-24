@@ -23,6 +23,7 @@ VSOutput VSMain(uint vertexID : SV_VertexID)
 
     VSOutput output;
     output.position = float4(positions[vertexID], 0.0, 1.0);
+
     return output;
 }
 
