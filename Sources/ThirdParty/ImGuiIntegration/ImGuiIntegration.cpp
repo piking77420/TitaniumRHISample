@@ -9,6 +9,7 @@
 #endif //  defined(TITANIUM_VULKAN)
 #if defined(TITANIUM_DIRECT_X12)
 #include <backends/imgui_impl_dx12.h>
+#include <DirectX12/Private/RhiToDirectX12.hpp>
 #endif // defined(TITANIUM_DIRECT_X12)
 
 #include <Plateform/Window.hpp>
@@ -90,10 +91,10 @@ namespace Ti::ThirdParty
         info.NumFramesInFlight = m_device->getRHI().getFrameInFlight();
 
         // Must match your render target view format
-        info.RTVFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+        info.RTVFormat = TiRHI::DirectX12::Private::toDirectX12(swapchain.getFormat());
         info.DSVFormat = DXGI_FORMAT_UNKNOWN;
 
-        // Your existing shader-visible CBV/SRV/UAV heap    
+        // Your existing shader-visible CBV/SRV/UAV heap
         info.SrvDescriptorHeap = TiRHI::Device::Private::getDescriptorAllocatorCbvSrvUav(*m_device).getHeap().Get();
 
         info.UserData = const_cast<TiRHI::Device*>(m_device);

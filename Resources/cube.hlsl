@@ -28,7 +28,10 @@ VSOutput VSMain(VSInput input)
     return output;
 }
 
-float4 PSMain(VSOutput input) : SV_TARGET0
+float4 PSMain(VSOutput input, bool isFrontFace : SV_IsFrontFace) : SV_TARGET0
 {
-    return colorTexture.Sample(colorSampler, input.uv);
+    return colorTexture.Sample(colorSampler, input.uv) +
+        (isFrontFace
+            ? float4(0.0, 1.0, 0.0, 0.0)
+            : float4(1.0, 0.0, 0.0, 0.0));
 }

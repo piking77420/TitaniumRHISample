@@ -260,8 +260,8 @@ protected:
         ImGui::End();
 
         const float aspect = static_cast<float>(getWindow().getWidth()) / static_cast<float>(getWindow().getHeight());
-        const MathLib::Matrix4x4f projection = Ti::Core::Math::perspectiveLH(1.39626f, aspect, 0.1f, 1000.0f);
-        const MathLib::Matrix4x4f view = Ti::Core::Math::viewLH(MathLib::Vector3<float>{0.0f, 0.0f, -5.0f},
+        const MathLib::Matrix4x4f projection = Ti::Core::Math::perspectiveRH(1.39626f, aspect, 0.1f, 1000.0f);
+        const MathLib::Matrix4x4f view = Ti::Core::Math::viewRH(MathLib::Vector3<float>{0.0f, 0.0f, -5.0f},
                                                                 MathLib::Vector3<float>{0.0f, 0.0f, 0.0f},
                                                                 MathLib::Vector3<float>{0.0f, 1.0f, 0.0f});
         const MathLib::Matrix4x4f model =
@@ -460,21 +460,15 @@ protected:
 
         m_cubePipeline = std::move(compilePsoVertexFrag("cube.hlsl"sv, L"cube.vert.spriv", L"cube.pixel.spriv"));
 
-        auto& cubePipeline =
-            m_cubePipeline.setName("Cube Pipeline")
-                .setDescriptorSetLayoutEntries(
-                    std::array{TiRHI::GraphicPipeline::DescriptorSetLayoutEntry{m_cubeSet.getBindingsLayout(), 0}})
-                .setVertexBindingDescription(m_vertexBindingDescription)
-                .setVertexInputAttributeDescription(m_vertexInputAttributeDescription)
-                .setRenderPassDescritptor(&m_simplePass->renderPassDescriptor);
+        m_cubePipeline.setName("Cube Pipeline")
+            .setDescriptorSetLayoutEntries(
+                std::array{TiRHI::GraphicPipeline::DescriptorSetLayoutEntry{m_cubeSet.getBindingsLayout(), 0}})
+            .setVertexBindingDescription(m_vertexBindingDescription)
+            .setVertexInputAttributeDescription(m_vertexInputAttributeDescription)
+            .setRenderPassDescritptor(&m_simplePass->renderPassDescriptor)
+            .setDepthCompareOp(TiRHI::CompareOp::Less);
 
-        if (getRHI().getApi() == TiRHI::RhiApi::Vulkan)
-        {
-            cubePipeline.setCullModeFlag(TiRHI::CullModeFlag::Back)
-                .setFrontFace(TiRHI::FrontFace::Clockwise);
-        }
-
-        if (!cubePipeline.build())
+        if (!m_cubePipeline.build())
         {
             TI_LOG_FATAL(Core, "Failed to build pipeline {}", m_cubePipeline.getName());
         }

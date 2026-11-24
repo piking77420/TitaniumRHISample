@@ -18,7 +18,7 @@ namespace Ti::Core::Math
         const MathLib::Vector3<T> right = MathLib::Vector3<T>::cross(up, forward).normalize();
         const MathLib::Vector3<T> realUp = MathLib::Vector3<T>::cross(forward, right);
 
-        MathLib::Matrix4x4<T> m{};
+        MathLib::Matrix4x4<T> m = MathLib::Matrix4x4<T>::identity();
 
         m[0][0] = right.getX();
         m[0][1] = right.getY();
@@ -35,11 +35,6 @@ namespace Ti::Core::Math
         m[2][2] = forward.getZ();
         m[2][3] = -MathLib::Vector3<T>::dot(forward, eye);
 
-        m[3][0] = T(0);
-        m[3][1] = T(0);
-        m[3][2] = T(0);
-        m[3][3] = T(1);
-
         return m;
     }
 
@@ -53,7 +48,7 @@ namespace Ti::Core::Math
         const MathLib::Vector3<T> right = MathLib::Vector3<T>::cross(up, backward).normalize();
         const MathLib::Vector3<T> realUp = MathLib::Vector3<T>::cross(backward, right);
 
-        MathLib::Matrix4x4<T> m{};
+        MathLib::Matrix4x4<T> m = MathLib::Matrix4x4<T>::identity();
 
         m[0][0] = right.getX();
         m[0][1] = right.getY();
@@ -69,11 +64,6 @@ namespace Ti::Core::Math
         m[2][1] = backward.getY();
         m[2][2] = backward.getZ();
         m[2][3] = -MathLib::Vector3<T>::dot(backward, eye);
-
-        m[3][0] = T(0);
-        m[3][1] = T(0);
-        m[3][2] = T(0);
-        m[3][3] = T(1);
 
         return m;
     }
