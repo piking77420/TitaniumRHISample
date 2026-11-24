@@ -42,6 +42,41 @@ namespace Ti::Core::Math
 
         return m;
     }
+
+    // Right-handed camera: +X right, +Y up, -Z forward
+    template<typename T>
+    requires(std::is_floating_point_v<T>)
+    [[nodiscard]] MathLib::Matrix4x4<T> viewRH(const MathLib::Vector3<T>& eye, const MathLib::Vector3<T>& target,
+                                               const MathLib::Vector3<T>& up)
+    {
+        const MathLib::Vector3<T> backward = (eye - target).normalize();
+        const MathLib::Vector3<T> right = MathLib::Vector3<T>::cross(up, backward).normalize();
+        const MathLib::Vector3<T> realUp = MathLib::Vector3<T>::cross(backward, right);
+
+        MathLib::Matrix4x4<T> m{};
+
+        m[0][0] = right.getX();
+        m[0][1] = right.getY();
+        m[0][2] = right.getZ();
+        m[0][3] = -MathLib::Vector3<T>::dot(right, eye);
+
+        m[1][0] = realUp.getX();
+        m[1][1] = realUp.getY();
+        m[1][2] = realUp.getZ();
+        m[1][3] = -MathLib::Vector3<T>::dot(realUp, eye);
+
+        m[2][0] = backward.getX();
+        m[2][1] = backward.getY();
+        m[2][2] = backward.getZ();
+        m[2][3] = -MathLib::Vector3<T>::dot(backward, eye);
+
+        m[3][0] = T(0);
+        m[3][1] = T(0);
+        m[3][2] = T(0);
+        m[3][3] = T(1);
+
+        return m;
+    }
 }
 
 #endif // TITANIUM_SAMPLE_CORE_MATH_VIEW_H

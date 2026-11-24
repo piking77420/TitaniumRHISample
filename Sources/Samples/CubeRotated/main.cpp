@@ -460,13 +460,21 @@ protected:
 
         m_cubePipeline = std::move(compilePsoVertexFrag("cube.hlsl"sv, L"cube.vert.spriv", L"cube.pixel.spriv"));
 
-        if (!m_cubePipeline.setName("Cube Pipeline")
-                 .setDescriptorSetLayoutEntries(
-                     std::array{TiRHI::GraphicPipeline::DescriptorSetLayoutEntry{m_cubeSet.getBindingsLayout(), 0}})
-                 .setVertexBindingDescription(m_vertexBindingDescription)
-                 .setVertexInputAttributeDescription(m_vertexInputAttributeDescription)
-                 .setRenderPassDescritptor(&m_simplePass->renderPassDescriptor)
-                 .build())
+        auto& cubePipeline =
+            m_cubePipeline.setName("Cube Pipeline")
+                .setDescriptorSetLayoutEntries(
+                    std::array{TiRHI::GraphicPipeline::DescriptorSetLayoutEntry{m_cubeSet.getBindingsLayout(), 0}})
+                .setVertexBindingDescription(m_vertexBindingDescription)
+                .setVertexInputAttributeDescription(m_vertexInputAttributeDescription)
+                .setRenderPassDescritptor(&m_simplePass->renderPassDescriptor);
+
+        if (getRHI().getApi() == TiRHI::RhiApi::Vulkan)
+        {
+            cubePipeline.setCullModeFlag(TiRHI::CullModeFlag::Back)
+                .setFrontFace(TiRHI::FrontFace::Clockwise);
+        }
+
+        if (!cubePipeline.build())
         {
             TI_LOG_FATAL(Core, "Failed to build pipeline {}", m_cubePipeline.getName());
         }
