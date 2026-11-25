@@ -97,7 +97,7 @@ namespace Ti::Common
         info.setCode(std::span(data.get(), size))
         .setApiTarget(getShaderCompilerApi())
         .setEntryPoints(shaderEntryPoint)
-            .setDefines(defines);
+            .setDefines(defines).setMatrixConvention(Ti::ShaderCompiler::Compiler::MatrixConvention::Coloms);
 
         std::expected modulesCode = m_shaderCompiler.getCode(info);
 

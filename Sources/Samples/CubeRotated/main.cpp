@@ -1,8 +1,11 @@
 #include <iostream>
 #include <print>
+#include <algorithm>
+#include <cmath>
 #include <fstream>
 #include <filesystem>
 #include <memory>
+#include <numbers>
 #include <stdexcept>
 #include <format>
 #include <string>
@@ -12,22 +15,26 @@
 
 #include <ImGuiIntegration/ImGuiIntegration.hpp>
 #include <imgui.h>
+#include <GLFW/glfw3.h>
 
-#include <Common/Exemple.hpp>
+#include <Common/CameraExemple.hpp>
 #include <Assets/Image.hpp>
 #include <Assets/Texture.hpp>
 #include <Rendering/Texture.hpp>
 #include <Io/File.hpp>
+#include <Core/Camera.hpp>
 #include <Core/Log.hpp>
+#include <Core/Math/EasingFunction.hpp>
 #include <Core/Math/Projection.hpp>
 #include <Core/Math/View.hpp>
-using namespace std::literals;
-using namespace Ti::ShaderCompiler;
-namespace fs = std::filesystem;
+#include <Common/CameraController.hpp>
 #include <Matrix4x4.hpp>
 #include <Vector3.hpp>
 #include <Vector2.hpp>
 #include <MatrixTransformation.hpp>
+using namespace std::literals;
+using namespace Ti::ShaderCompiler;
+namespace fs = std::filesystem;
 
 struct FrameConstantBuffer
 {
@@ -94,14 +101,14 @@ std::array<uint16_t, 36> indices = {{// Front (+Z)
                                      // Bottom (-Y)
                                      20, 21, 22, 20, 22, 23}};
 
-class CubeRotated : public Ti::Common::Exemple
+class CubeRotated : public Ti::Common::CameraExemple
 {
 public:
     CubeRotated() = delete;
     virtual ~CubeRotated() = default;
 
     CubeRotated(std::string name)
-        : Ti::Common::Exemple(std::move(name))
+        : Ti::Common::CameraExemple(std::move(name))
         , m_samplerNearestRepeat(getDevice())
         , m_samplerNearestClamp(getDevice())
         , m_texture(getDevice())
@@ -113,6 +120,7 @@ public:
         , m_cubePipeline(getDevice())
         , m_drawTextureToScreenTriangle(getDevice())
     {
+
         setupSampler();
         setupTexture();
         setupVertexDescription();
@@ -181,7 +189,6 @@ protected:
             depthTexture.set(depthDescriptor);
             depthDescriptor.setLoadOp(TiRHI::LoadOp::Clear).setStoreOp(TiRHI::StoreOp::Store);
 
-
             if (!renderPassDescriptor.setName("Scene RenderPassDescriptor")
                      .setColorAttachments(std::array{colorDescriptor})
                      .setDepthAttachement(depthDescriptor)
@@ -236,8 +243,15 @@ protected:
 
     MathLib::Vector3f m_cubePosition = MathLib::Vector3f::zero();
 
+    MathLib::Vector3f m_cubeRotation = MathLib::Vector3f::zero();
+
+    MathLib::Vector3f m_cubeScaling = MathLib::Vector3f(1.f, 1.f, 1.f);
+
     void onResizeWindow() final
     {
+        const float aspect = static_cast<float>(getWindow().getWidth()) / static_cast<float>(getWindow().getHeight());
+
+        m_camera.setAspectRation(aspect);
         m_simplePass.reset();
         m_simplePass.emplace(*this);
         m_simplePass->build(*this);
@@ -245,28 +259,25 @@ protected:
 
     void onUpdate() final
     {
+        CameraExemple::onUpdate();
+
         static std::string windowName = [&]()
         { return std::string(getName()) + " " + std::string(TiRHI::toString(getRHI().getApi())); }();
         ImGui::Begin(windowName.c_str());
         ImGui::DragFloat3("Postion", reinterpret_cast<float*>(&m_cubePosition));
+        ImGui::DragFloat3("Rotation", reinterpret_cast<float*>(&m_cubeRotation));
+        ImGui::DragFloat3("Scaling", reinterpret_cast<float*>(&m_cubeScaling));
         ImGui::End();
-
-     
     }
 
     void onRender()
     {
         const float aspect = static_cast<float>(getWindow().getWidth()) / static_cast<float>(getWindow().getHeight());
         const MathLib::Matrix4x4f projection = Ti::Core::Math::perspectiveRH(1.39626f, aspect, 0.1f, 1000.0f);
-        const MathLib::Matrix4x4f view = Ti::Core::Math::viewRH(MathLib::Vector3<float>{0.0f, 0.0f, -5.0f},
-                                                                MathLib::Vector3<float>{0.0f, 0.0f, 0.0f},
-                                                                MathLib::Vector3<float>{0.0f, 1.0f, 0.0f});
+        assert(projection == m_camera.getProjection());
         const MathLib::Matrix4x4f model =
-            MathLib::trs<float>(m_cubePosition,                                               // Translation
-                                MathLib::Vector3<float>{0.0f, (float)ImGui::GetTime(), 0.0f}, // Rotation (radians)
-                                MathLib::Vector3<float>{1.0f, 1.0f, 1.0f}                     // Scale
-            );
-        const MathLib::Matrix4x4f wvp = projection * view * model;
+            MathLib::trs<float>(m_cubePosition, m_cubeRotation * MathLib::DegToRadf, m_cubeScaling);
+        const MathLib::Matrix4x4f wvp = projection * m_camera.getView() * model;
 
         if (std::byte* ptr = m_rootConstantBuffer.beginDynamicUpdate())
         {
@@ -292,6 +303,9 @@ protected:
 
             TiRHI::BeginRenderPass renderPass{};
             renderPass.setRenderArea(renderArea).setClearColors(clearColor).setClearDepthStencil(clearColorStencil);
+
+            cmd.transitionResource(m_simplePass->colorTexture, TiRHI::ResourceState::RenderTarget);
+            cmd.transitionResource(m_simplePass->depthTexture, TiRHI::ResourceState::DepthWrite);
 
             TiRHI::DebugScope _(cmd, "Scene Pass"sv, std::array{0.1f, 1.0f, 0.0f, 1.0f});
             cmd.beginRenderPass(renderPass, m_simplePass->renderTargets);

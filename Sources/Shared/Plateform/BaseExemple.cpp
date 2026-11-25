@@ -131,6 +131,7 @@ namespace Ti::Plateform
             TiRHI::BeginRenderPass renderPass{};
             renderPass.setRenderArea(renderArea).setClearColors(clearColor);
 
+            cmd.transitionResource(getSwapChain().getCurrentSwapChainTexture(), TiRHI::ResourceState::RenderTarget);
             if (cmd.beginRenderPass(renderPass, renderTarget))
             {
                 onSwapChainRenderPass(cmd, swapChain);
@@ -143,7 +144,6 @@ namespace Ti::Plateform
                 cmd.endRenderPass();
             }
             cmd.transitionResource(getSwapChain().getCurrentSwapChainTexture(), TiRHI::ResourceState::Present);
-
         }
         cmd.endRecord();
     }

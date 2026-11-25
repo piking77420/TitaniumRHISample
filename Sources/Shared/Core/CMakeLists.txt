@@ -1,10 +1,11 @@
 cmake_minimum_required(VERSION 3.26)
 
 set(SOURCES
-    Math/Projection.cpp
+    Math/EasingFunction.hpp
     Math/Projection.hpp
-    Math/View.cpp
     Math/View.hpp
+    Camera.cpp
+    Camera.hpp
     EnumToString.hpp
     Log.cpp
     Log.hpp

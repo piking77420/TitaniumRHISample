@@ -45,8 +45,6 @@ namespace Ti::Plateform
 
         virtual void onSwapChainRenderPass(TiRHI::CommandList& cmd, TiRHI::SwapChain& swapChain) = 0;
 
-
-
         TiRHI::RHI& getRHI()
         {
             return m_rhi;
@@ -70,6 +68,11 @@ namespace Ti::Plateform
         const TiRHI::SwapChain& getSwapChain() const
         {
             return m_swapChain;
+        }
+
+        const Ti::Io::Io& getIo() const
+        {
+            return m_io;
         }
 
         Ti::Plateform::Window& getWindow()
