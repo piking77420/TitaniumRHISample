@@ -29,17 +29,23 @@ namespace Ti::Plateform
     protected:
         void handleResize();
 
-        void render(TiRHI::CommandList& cmd, TiRHI::SwapChain& swapChain);
-
         void update();
 
-        virtual void onRender(TiRHI::CommandList& cmd, TiRHI::SwapChain& swapChain) = 0;
+        void render();
 
-        virtual void onSwapChainRenderPass(TiRHI::CommandList& cmd, TiRHI::SwapChain& swapChain) = 0;
+        void record(TiRHI::CommandList& cmd, TiRHI::SwapChain& swapChain);
+
+        virtual void onResizeWindow() {};
 
         virtual void onUpdate() = 0;
 
-        virtual void onResizeWindow() {};
+        virtual void onRender() = 0;
+
+        virtual void onRecord(TiRHI::CommandList& cmd, TiRHI::SwapChain& swapChain) = 0;
+
+        virtual void onSwapChainRenderPass(TiRHI::CommandList& cmd, TiRHI::SwapChain& swapChain) = 0;
+
+
 
         TiRHI::RHI& getRHI()
         {

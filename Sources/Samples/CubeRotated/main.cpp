@@ -176,19 +176,11 @@ protected:
 
             TiRHI::AttachmentDescriptor colorDescriptor{};
             colorTexture.set(colorDescriptor);
-            colorDescriptor.setLoadOp(TiRHI::LoadOp::Clear)
-                .setStoreOp(TiRHI::StoreOp::Store)
-                .setInitialState(TiRHI::ResourceState::Undefined)
-                .setRenderState(TiRHI::ResourceState::RenderTarget)
-                .setFinalState(TiRHI::ResourceState::ShaderResource);
-
+            colorDescriptor.setLoadOp(TiRHI::LoadOp::Clear).setStoreOp(TiRHI::StoreOp::Store);
             TiRHI::AttachmentDescriptor depthDescriptor{};
             depthTexture.set(depthDescriptor);
-            depthDescriptor.setLoadOp(TiRHI::LoadOp::Clear)
-                .setStoreOp(TiRHI::StoreOp::Store)
-                .setInitialState(TiRHI::ResourceState::Undefined)
-                .setRenderState(TiRHI::ResourceState::DepthWrite)
-                .setFinalState(TiRHI::ResourceState::ShaderResource);
+            depthDescriptor.setLoadOp(TiRHI::LoadOp::Clear).setStoreOp(TiRHI::StoreOp::Store);
+
 
             if (!renderPassDescriptor.setName("Scene RenderPassDescriptor")
                      .setColorAttachments(std::array{colorDescriptor})
@@ -259,6 +251,11 @@ protected:
         ImGui::DragFloat3("Postion", reinterpret_cast<float*>(&m_cubePosition));
         ImGui::End();
 
+     
+    }
+
+    void onRender()
+    {
         const float aspect = static_cast<float>(getWindow().getWidth()) / static_cast<float>(getWindow().getHeight());
         const MathLib::Matrix4x4f projection = Ti::Core::Math::perspectiveRH(1.39626f, aspect, 0.1f, 1000.0f);
         const MathLib::Matrix4x4f view = Ti::Core::Math::viewRH(MathLib::Vector3<float>{0.0f, 0.0f, -5.0f},
@@ -280,13 +277,10 @@ protected:
         }
     }
 
-    void onRender(TiRHI::CommandList& cmd, TiRHI::SwapChain& swapChain) final
+    void onRecord(TiRHI::CommandList& cmd, TiRHI::SwapChain& swapChain) final
     {
         // nothing
         {
-            cmd.transitionResource(m_simplePass->colorTexture, TiRHI::ResourceState::Undefined);
-            cmd.transitionResource(m_simplePass->depthTexture, TiRHI::ResourceState::Undefined);
-
             TiRHI::Rect2D renderArea{};
             renderArea.setExtend(getSwapChain().getExtend());
 
@@ -318,6 +312,7 @@ protected:
             cmd.drawIndexed(static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
             cmd.endRenderPass();
         }
+        cmd.transitionResource(m_simplePass->colorTexture, TiRHI::ResourceState::ShaderResource);
     }
 
     void onSwapChainRenderPass(TiRHI::CommandList& cmd, TiRHI::SwapChain& swapChain) final
@@ -364,7 +359,6 @@ protected:
         pushRenderCommand(
             [this, size = image.getTotalSize(), data = std::move(image).acquireData()](TiRHI::CommandList& command)
             {
-                command.transitionResource(m_texture, TiRHI::ResourceState::CopyDestination);
                 command.upload2d(m_texture, std::as_bytes(std::span(data.get(), size)));
                 command.transitionResource(m_texture, TiRHI::ResourceState::ShaderResource);
             });
@@ -505,7 +499,6 @@ protected:
         pushRenderCommand(
             [this, verticiesToUpload = vertices](TiRHI::CommandList& command)
             {
-                command.transitionResource(m_vertexBuffer, TiRHI::ResourceState::CopyDestination);
                 command.uploadBuffer(m_vertexBuffer, 0,
                                      std::as_bytes(std::span(verticiesToUpload.data(), verticiesToUpload.size())));
                 command.transitionResource(m_vertexBuffer, TiRHI::ResourceState::VertexBuffer);

@@ -70,7 +70,7 @@ protected:
         cmd.draw(3, 1, 0, 0);
     }
 
-    void onRender([[maybe_unused]] TiRHI::CommandList& cmd, [[maybe_unused]] TiRHI::SwapChain& swapChain)
+    void onRecord([[maybe_unused]] TiRHI::CommandList& cmd, [[maybe_unused]] TiRHI::SwapChain& swapChain)
     {
     }
 

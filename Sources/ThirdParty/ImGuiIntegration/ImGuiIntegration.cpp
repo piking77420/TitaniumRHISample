@@ -90,7 +90,7 @@ namespace Ti::ThirdParty
         // Number of frames in flight, not swapchain images
         info.NumFramesInFlight = m_device->getRHI().getFrameInFlight();
 
-        // Must match your render target view format
+        // Must match your record target view format
         info.RTVFormat = TiRHI::DirectX12::Private::toDirectX12(swapchain.getFormat());
         info.DSVFormat = DXGI_FORMAT_UNKNOWN;
 
@@ -230,7 +230,7 @@ namespace Ti::ThirdParty
         ImGui::Render();
     }
 
-    void ImguiIntegration::render(TiRHI::CommandList& commandList)
+    void ImguiIntegration::record(TiRHI::CommandList& commandList)
     {
         ImDrawData* draw_data = ImGui::GetDrawData();
 #if defined(TITANIUM_VULKAN)

@@ -68,7 +68,7 @@ protected:
         }
     }
 
-    void onRender(TiRHI::CommandList& cmd, TiRHI::SwapChain& swapChain) final
+    void onRecord(TiRHI::CommandList& cmd, TiRHI::SwapChain& swapChain) final
     {
     }
 

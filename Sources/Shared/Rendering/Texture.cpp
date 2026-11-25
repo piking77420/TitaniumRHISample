@@ -15,7 +15,7 @@ namespace Ti::Rendering
 
         if (Assets::AssetStrongRef strongRef = weakref.lock())
         {
-            // TODO get app and equeu render command
+            // TODO get app and equeu record command
             // upload texture
 
             /*

@@ -104,7 +104,7 @@ namespace Ti::Plateform
         onResizeWindow();
     }
 
-    void BaseExemple::render(TiRHI::CommandList& cmd, TiRHI::SwapChain& swapChain)
+    void BaseExemple::record(TiRHI::CommandList& cmd, TiRHI::SwapChain& swapChain)
     {
         if (!cmd.beginRecord())
             return;
@@ -117,7 +117,7 @@ namespace Ti::Plateform
             m_pendingRenderCommand.clear();
         }
 
-        onRender(cmd, swapChain);
+        onRecord(cmd, swapChain);
 
         {
             TiRHI::DebugScope _(cmd, "SwapChain Pass"sv, std::array{1.0f, 1.0f, 0.0f, 1.0f});
@@ -131,27 +131,32 @@ namespace Ti::Plateform
             TiRHI::BeginRenderPass renderPass{};
             renderPass.setRenderArea(renderArea).setClearColors(clearColor);
 
-            cmd.transitionResource(getSwapChain().getCurrentSwapChainTexture(), TiRHI::ResourceState::Present);
             if (cmd.beginRenderPass(renderPass, renderTarget))
             {
                 onSwapChainRenderPass(cmd, swapChain);
 
                 {
                     TiRHI::DebugScope _(cmd, "Imgui Pass"sv, std::array{1.0f, 1.0f, 0.0f, 1.0f});
-                    m_imguiIntegration.render(cmd);
+                    m_imguiIntegration.record(cmd);
                 }
 
                 cmd.endRenderPass();
             }
+            cmd.transitionResource(getSwapChain().getCurrentSwapChainTexture(), TiRHI::ResourceState::Present);
+
         }
         cmd.endRecord();
     }
 
     void BaseExemple::update()
     {
-        m_imguiIntegration.newFrame();
         onUpdate();
         m_imguiIntegration.update();
+    }
+
+    void BaseExemple::render()
+    {
+        onRender();
     }
 
     void BaseExemple::run()
@@ -160,17 +165,18 @@ namespace Ti::Plateform
         {
             m_window.prepareForCurrentFrame();
             m_io.poolEvents();
-
+            m_imguiIntegration.newFrame();
+            handleResize();
             update();
             {
-                handleResize();
                 m_device.beginFrame();
+                render();
 
                 std::array frames = {m_swapChain.acquireNextImage()};
 
                 if (frames[0].getSucces())
                 {
-                    render(m_cmdList, m_swapChain);
+                    record(m_cmdList, m_swapChain);
 
                     const std::array submitDesc = {
                         TiRHI::Device::SubmitPresentDesc{.commandList = &m_cmdList, .acquireFrames = frames}};
