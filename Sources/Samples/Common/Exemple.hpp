@@ -41,6 +41,9 @@ namespace Ti::Common
         compileShader(const char* filePath,
                       const std::span<const Ti::ShaderCompiler::Compiler::ShaderEntryPoint>& shaderEntryPoint);
 
+        TiRHI::GraphicPipeline compilePsoVertexFrag(std::string_view shaderName,
+                                                    std::wstring_view vertexModuleOutPutName,
+                                                    std::wstring_view pixelModuleOutPutName);
     };
 
 } // Ti::Common

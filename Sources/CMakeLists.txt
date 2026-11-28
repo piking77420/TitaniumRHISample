@@ -50,6 +50,7 @@ add_subdirectory(Samples/Triangle)
 add_subdirectory(Samples/TriangleTexture)
 add_subdirectory(Samples/TriangleTexturePushConstant)
 add_subdirectory(Samples/CubeRotated)
+add_subdirectory(Samples/DrawIndirect)
 
 
 foreach(target IN LISTS EXECUTABLE_NAMES)

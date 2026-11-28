@@ -3,9 +3,11 @@
 
 namespace Ti::Common
 {
+    using namespace std::literals;
+    using namespace Ti::ShaderCompiler;
+
     void Exemple::printCompilerError(Ti::ShaderCompiler::Compiler::GetCodeError error)
     {
-        using namespace Ti::ShaderCompiler;
 
         switch (error)
         {
@@ -181,6 +183,29 @@ namespace Ti::Common
 		}
 
         return compileModuleData;
+    }
+
+
+    TiRHI::GraphicPipeline Exemple::compilePsoVertexFrag(std::string_view shaderName, std::wstring_view vertexModuleOutPutName, std::wstring_view pixelModuleOutPutName)
+    {
+         using namespace Ti::ShaderCompiler;
+
+          const std::vector<Compiler::ShaderEntryPoint> entryPoint = {
+            Compiler::ShaderEntryPoint{.stage = Compiler::ShaderStage::Vertex,
+                                       .entryPoint = L"VSMain"sv,
+                                       .outPutModuleName = vertexModuleOutPutName},
+            Compiler::ShaderEntryPoint{.stage = Compiler::ShaderStage::Pixel,
+                                       .entryPoint = L"PSMain"sv,
+                                       .outPutModuleName = pixelModuleOutPutName}};
+
+        std::vector<CompileModuleData> moduleDatas =
+            compileShader((std::filesystem::path(TITANIUM_RESOURCE_DIR) / shaderName).generic_string().c_str(), entryPoint);
+
+        TiRHI::GraphicPipeline pipeline(getDevice());
+        for (auto& moduleDatas : moduleDatas)
+            pipeline.addModule(moduleDatas.stage, std::move(moduleDatas.data), std::move(moduleDatas.entryPoint));
+
+        return std::move(pipeline);
     }
 
 } // Ti::Common
