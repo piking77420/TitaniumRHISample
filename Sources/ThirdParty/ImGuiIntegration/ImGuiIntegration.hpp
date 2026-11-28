@@ -22,7 +22,7 @@ namespace Ti::ThirdParty
 
         void update();
 
-        void render(TiRHI::CommandList& commandList);
+        void record(TiRHI::CommandList& commandList);
 
     private:
         bool imguiVulkan(const Plateform::Window& window, const TiRHI::SwapChain& swapchain);

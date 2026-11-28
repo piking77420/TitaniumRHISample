@@ -19,7 +19,7 @@ namespace Ti::Rendering
     class Texture : public GpuResource
     {
     public:
-        Texture(TiRHI::RHI& rhi);
+        Texture(TiRHI::Device& device);
         virtual ~Texture() = default;
         Texture(TiRHI::Device& device, const Assets::Texture& assetsTexture);
 

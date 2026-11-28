@@ -21,6 +21,7 @@ set(PRIVATE_DEPENDENCIES
     Assets
     Rendering
     ImGuiIntegration
+    MathLib
 )
 
 
@@ -48,6 +49,7 @@ target_compile_definitions(Common PRIVATE
 add_subdirectory(Samples/Triangle)
 add_subdirectory(Samples/TriangleTexture)
 add_subdirectory(Samples/TriangleTexturePushConstant)
+add_subdirectory(Samples/CubeRotated)
 
 
 foreach(target IN LISTS EXECUTABLE_NAMES)

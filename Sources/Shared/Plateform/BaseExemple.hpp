@@ -9,6 +9,7 @@
 #include <Plateform/Window.hpp>
 #include <Plateform/App.hpp>
 #include <Io/Io.hpp>
+#include <ImGuiIntegration/ImGuiIntegration.hpp>*
 
 namespace Ti::Plateform
 {
@@ -28,11 +29,28 @@ namespace Ti::Plateform
     protected:
         void handleResize();
 
-        virtual void render(TiRHI::CommandList& cmd, TiRHI::SwapChain& m_swapChain) = 0;
+        void update();
 
-        virtual void update() = 0;
+        void render();
+
+        void record(TiRHI::CommandList& cmd, TiRHI::SwapChain& swapChain);
+
+        virtual void onResizeWindow() {};
+
+        virtual void onUpdate() = 0;
+
+        virtual void onRender() = 0;
+
+        virtual void onRecord(TiRHI::CommandList& cmd, TiRHI::SwapChain& swapChain) = 0;
+
+        virtual void onSwapChainRenderPass(TiRHI::CommandList& cmd, TiRHI::SwapChain& swapChain) = 0;
 
         TiRHI::RHI& getRHI()
+        {
+            return m_rhi;
+        }
+
+        const TiRHI::RHI& getRHI() const
         {
             return m_rhi;
         }
@@ -52,9 +70,19 @@ namespace Ti::Plateform
             return m_swapChain;
         }
 
+        const Ti::Io::Io& getIo() const
+        {
+            return m_io;
+        }
+
         Ti::Plateform::Window& getWindow()
         {
             return m_window;
+        }
+
+        void pushRenderCommand(std::move_only_function<void(TiRHI::CommandList&)>&& func)
+        {
+            m_pendingRenderCommand.emplace_back(std::move(func));
         }
 
         static constexpr size_t ImageCount = 3;
@@ -75,6 +103,10 @@ namespace Ti::Plateform
         TiRHI::SwapChain m_swapChain;
 
         TiRHI::CommandList m_cmdList;
+
+        Ti::ThirdParty::ImguiIntegration m_imguiIntegration;
+
+        std::vector<std::move_only_function<void(TiRHI::CommandList&)>> m_pendingRenderCommand;
     };
 
 } // Ti::Core::Platerform

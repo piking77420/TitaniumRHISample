@@ -16,6 +16,29 @@ endif()
 add_subdirectory("${THIRD_PARTY_DIR}/TitaniumShaderCompiler")
 add_subdirectory("${THIRD_PARTY_DIR}/TitaniumRHI")
 add_subdirectory("${THIRD_PARTY_DIR}/glfw")
+## ignore Imgui exemples
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
+    "${THIRD_PARTY_DIR}/Imgui/examples*"
+)
+list(FILTER SOURCES EXCLUDE REGEX "\\.slnx$")
+
+
+
+set(MATHLIB_USE_INTRINSIC true)
+set(MATHLIB_USE_FMA true)
+
+string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" TARGET_ARCH)
+
+if(TARGET_ARCH MATCHES "^(x86_64|amd64|x64)$")
+    set(MATHLIB_SIMD_EXT AVX)
+    # set(MATHLIB_SIMD_EXT AVX2)
+elseif(TARGET_ARCH MATCHES "^(aarch64|arm64)$")
+    set(MATHLIB_SIMD_EXT SVE)
+else()
+    message(FATAL_ERROR "Unsupported architecture: ${CMAKE_SYSTEM_PROCESSOR}")
+endif()
+
+add_subdirectory("${THIRD_PARTY_DIR}/MathLib")
 
 
 add_subdirectory(Sources)

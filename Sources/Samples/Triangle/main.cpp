@@ -26,7 +26,7 @@ public:
 
     TriangleExemple(std::string name)
         : Ti::Common::Exemple(std::move(name))
-        , m_pipeline(getRHI())
+        , m_pipeline(getDevice())
     {
         using namespace Ti::ShaderCompiler;
         namespace fs = std::filesystem;
@@ -47,7 +47,7 @@ public:
 
         if (!m_pipeline.setName("Base Pipeline")
                  .setRenderPassDescritptor(&getSwapChain().getRenderPassDescriptor())
-                 .build(getDevice()))
+                 .build())
         {
             TI_LOG_FATAL(Core, "Failed to build pipeline");
         }
@@ -56,44 +56,30 @@ public:
 protected:
     TiRHI::GraphicPipeline m_pipeline;
 
-    void render(TiRHI::CommandList& cmd, TiRHI::SwapChain& m_swapChain) final
+    void onSwapChainRenderPass(TiRHI::CommandList& cmd, TiRHI::SwapChain& swapChain) final
     {
-        if (!cmd.beginRecord())
-            return;
-        {
-            TiRHI::DebugScope _(cmd, "SwapChain Pass"sv, std::array{1.0f, 1.0f, 0.0f, 1.0f});
-            TiRHI::RenderTargets& renderTarget = m_swapChain.getCurrentRenderTargets();
+        TiRHI::Viewport viewPort;
+        viewPort.setPosition({0, 0}).setExtend(static_cast<TiRHI::Extend2DF>(swapChain.getExtend()));
 
-            TiRHI::Rect2D renderArea{};
-            renderArea.setExtend(m_swapChain.getExtend());
+        cmd.setViewPort(viewPort);
 
-            std::array<TiRHI::ClearValueColor, 1> clearColor;
-            clearColor[0].color = AppClearColor;
-            TiRHI::BeginRenderPass renderPass{};
-            renderPass.setRenderArea(renderArea).setClearColors(clearColor);
-
-            cmd.transitionResource(m_swapChain.getCurrentSwapChainTexture(), TiRHI::ResourceState::Present);
-            if (cmd.beginRenderPass(renderPass, renderTarget))
-            {
-                TiRHI::Viewport viewPort;
-                viewPort.setPosition({0, 0}).setExtend(static_cast<TiRHI::Extend2DF>(m_swapChain.getExtend()));
-
-                cmd.setViewPort(viewPort);
-
-                TiRHI::Rect2D scissors;
-                scissors.setOffset({0, 0}).setExtend(m_swapChain.getExtend());
-                cmd.setScissors(scissors);
-                cmd.bindPipeline(m_pipeline);
-                cmd.draw(3, 1, 0, 0);
-                cmd.endRenderPass();
-            }
-        }
-        cmd.endRecord();
+        TiRHI::Rect2D scissors;
+        scissors.setOffset({0, 0}).setExtend(swapChain.getExtend());
+        cmd.setScissors(scissors);
+        cmd.bindPipeline(m_pipeline);
+        cmd.draw(3, 1, 0, 0);
     }
 
-    void update() final
+    void onRecord([[maybe_unused]] TiRHI::CommandList& cmd, [[maybe_unused]] TiRHI::SwapChain& swapChain) final
     {
-        // NOTHING
+    }
+
+    void onUpdate() final
+    {
+    }
+
+    void onRender() final
+    {
     }
 };
 

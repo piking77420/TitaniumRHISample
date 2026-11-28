@@ -1,21 +1,21 @@
+#include <Rendering/Texture.hpp>
 #include <Assets/Texture.hpp>
-#include "Texture.hpp"
 
 namespace Ti::Rendering
 {
-    Texture::Texture(TiRHI::RHI& rhi)
-        : m_texture(rhi)
+    Texture::Texture(TiRHI::Device& device)
+        : m_texture(device)
     {
     }
 
     Texture::Texture(TiRHI::Device& device, const Assets::Texture& assetsTexture)
-        : m_texture(device.getRHI())
+        : m_texture(device)
     {
         Assets::AssetWeakRef<const Assets::Image> weakref = assetsTexture.getImage();
 
         if (Assets::AssetStrongRef strongRef = weakref.lock())
         {
-            // TODO get app and equeu render command
+            // TODO get app and equeu record command
             // upload texture
 
             /*

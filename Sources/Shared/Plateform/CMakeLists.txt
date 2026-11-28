@@ -21,4 +21,5 @@ target_link_libraries(Plateform
     PRIVATE
         glfw
         TitaniumRHI
+        ImGuiIntegration
 )

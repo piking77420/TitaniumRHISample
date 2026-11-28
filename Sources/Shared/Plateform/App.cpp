@@ -14,7 +14,7 @@ namespace Ti::Plateform
     App::App(std::string name)
         : m_name(name)
     {
-        Ti::Core::SetThreadName("PlateFrom Thread");
+        Ti::Core::SetThreadName("PlateForm Thread");
         Ti::Core::Log::setFileOutPut((std::filesystem::path(Ti::Paths::Saved) / "Log.txt"));
     }
 

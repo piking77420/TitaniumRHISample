@@ -1,5 +1,6 @@
 #include <Plateform/BaseExemple.hpp>
 #include <Core/Log.hpp>
+using namespace std::literals;
 
 void debugCallBack(const std::wstring& message, TiRHI::RhiApi api, TiRHI::RhiMessageSeverity severity)
 {
@@ -49,10 +50,10 @@ namespace Ti::Plateform
 
                   return create;
               }())
-        , m_device(m_rhi)
-        , m_surface(m_rhi)
-        , m_swapChain(m_rhi)
-        , m_cmdList(m_rhi)
+        , m_device(getRHI())
+        , m_surface(getDevice())
+        , m_swapChain(getDevice())
+        , m_cmdList(getDevice())
     {
         // clang-format off
         
@@ -63,7 +64,7 @@ namespace Ti::Plateform
 
         // clang-format off
         m_device.setName("My Device")
-                .build(m_rhi, m_surface, m_rhi.getAdapters());
+                .build(m_surface, m_rhi.getAdapters());
         TI_LOG_INFO(Core, "Device Choosen : {}",  m_device.getSourceAdapter(m_rhi).getName());
         // clang-format 
         
@@ -75,14 +76,19 @@ namespace Ti::Plateform
             .setName("SwapChain")
             .setVsync(true)
             .setImageCount(ImageCount)
-            .build(m_device, m_surface);
+            .build(m_surface);
          // clang-format 
 
             // clang-format off
             m_cmdList
                 .setName("CommandList");
-            m_cmdList.build(m_device);
+            m_cmdList.build();
         // clang-format on
+
+        if (!m_imguiIntegration.build(getDevice(), getWindow(), getSwapChain()))
+        {
+            TI_LOG_ERROR(Core, "Failed to Init Imgui");
+        }
     }
 
     void BaseExemple::handleResize()
@@ -94,7 +100,63 @@ namespace Ti::Plateform
         // To avoid device wait we need to use deferred destroy
         // m_device.wait();
         m_swapChain.setWidth(m_window.getWidth()).setHeight(m_window.getHeight());
-        m_swapChain.recreateSwapChain(m_device, m_surface);
+        m_swapChain.recreateSwapChain(m_surface);
+        onResizeWindow();
+    }
+
+    void BaseExemple::record(TiRHI::CommandList& cmd, TiRHI::SwapChain& swapChain)
+    {
+        if (!cmd.beginRecord())
+            return;
+
+        if (!m_pendingRenderCommand.empty())
+        {
+            TiRHI::DebugScope _(cmd, "Upload"sv, std::array{0.0f, 0.0f, 1.0f, 1.0f});
+            for (auto& f : m_pendingRenderCommand)
+                f(cmd);
+            m_pendingRenderCommand.clear();
+        }
+
+        onRecord(cmd, swapChain);
+
+        {
+            TiRHI::DebugScope _(cmd, "SwapChain Pass"sv, std::array{1.0f, 1.0f, 0.0f, 1.0f});
+            TiRHI::RenderTargets& renderTarget = getSwapChain().getCurrentRenderTargets();
+
+            TiRHI::Rect2D renderArea{};
+            renderArea.setExtend(getSwapChain().getExtend());
+
+            std::array<TiRHI::ClearValueColor, 1> clearColor;
+            clearColor[0].color = AppClearColor;
+            TiRHI::BeginRenderPass renderPass{};
+            renderPass.setRenderArea(renderArea).setClearColors(clearColor);
+
+            cmd.transitionResource(getSwapChain().getCurrentSwapChainTexture(), TiRHI::ResourceState::RenderTarget);
+            if (cmd.beginRenderPass(renderPass, renderTarget))
+            {
+                onSwapChainRenderPass(cmd, swapChain);
+
+                {
+                    TiRHI::DebugScope _(cmd, "Imgui Pass"sv, std::array{1.0f, 1.0f, 0.0f, 1.0f});
+                    m_imguiIntegration.record(cmd);
+                }
+
+                cmd.endRenderPass();
+            }
+            cmd.transitionResource(getSwapChain().getCurrentSwapChainTexture(), TiRHI::ResourceState::Present);
+        }
+        cmd.endRecord();
+    }
+
+    void BaseExemple::update()
+    {
+        onUpdate();
+        m_imguiIntegration.update();
+    }
+
+    void BaseExemple::render()
+    {
+        onRender();
     }
 
     void BaseExemple::run()
@@ -103,17 +165,18 @@ namespace Ti::Plateform
         {
             m_window.prepareForCurrentFrame();
             m_io.poolEvents();
-
+            m_imguiIntegration.newFrame();
+            handleResize();
             update();
             {
-                handleResize();
                 m_device.beginFrame();
+                render();
 
-                std::array frames = {m_swapChain.acquireNextImage(m_device)};
+                std::array frames = {m_swapChain.acquireNextImage()};
 
                 if (frames[0].getSucces())
                 {
-                    render(m_cmdList, m_swapChain);
+                    record(m_cmdList, m_swapChain);
 
                     const std::array submitDesc = {
                         TiRHI::Device::SubmitPresentDesc{.commandList = &m_cmdList, .acquireFrames = frames}};

@@ -11,7 +11,19 @@ namespace Ti::Io
 
         void poolEvents();
 
+        double getTime() const noexcept
+        {
+            return m_time;
+        }
+
+        double getDeltatime() const noexcept
+        {
+            return m_deltatime;
+        }
+
     private:
+        double m_time = 0;
+        double m_deltatime = 0.0;
     };
 } // Ti::Io
 

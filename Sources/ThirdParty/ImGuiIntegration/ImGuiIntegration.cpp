@@ -9,6 +9,7 @@
 #endif //  defined(TITANIUM_VULKAN)
 #if defined(TITANIUM_DIRECT_X12)
 #include <backends/imgui_impl_dx12.h>
+#include <DirectX12/Private/RhiToDirectX12.hpp>
 #endif // defined(TITANIUM_DIRECT_X12)
 
 #include <Plateform/Window.hpp>
@@ -89,8 +90,8 @@ namespace Ti::ThirdParty
         // Number of frames in flight, not swapchain images
         info.NumFramesInFlight = m_device->getRHI().getFrameInFlight();
 
-        // Must match your render target view format
-        info.RTVFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+        // Must match your record target view format
+        info.RTVFormat = TiRHI::DirectX12::Private::toDirectX12(swapchain.getFormat());
         info.DSVFormat = DXGI_FORMAT_UNKNOWN;
 
         // Your existing shader-visible CBV/SRV/UAV heap
@@ -229,7 +230,7 @@ namespace Ti::ThirdParty
         ImGui::Render();
     }
 
-    void ImguiIntegration::render(TiRHI::CommandList& commandList)
+    void ImguiIntegration::record(TiRHI::CommandList& commandList)
     {
         ImDrawData* draw_data = ImGui::GetDrawData();
 #if defined(TITANIUM_VULKAN)
