@@ -301,8 +301,9 @@ protected:
             }
         }
 
-        pushRenderCommand(
-            [this, size = image.getTotalSize(), data = std::move(image).acquireData()](TiRHI::CommandList& command)
+        pushRhiCommand(
+            [this, size = image.getTotalSize(), data = std::move(image).acquireData()](TiRHI::Device& device,
+                                                                                       TiRHI::CommandList& command)
             {
                 command.upload2d(m_texture, std::as_bytes(std::span(data.get(), size)));
                 command.transitionResource(m_texture, TiRHI::ResourceState::ShaderResource);
@@ -374,8 +375,8 @@ protected:
             return;
         }
 
-        pushRenderCommand(
-            [this, verticiesToUpload = vertices](TiRHI::CommandList& command)
+        pushRhiCommand(
+            [this, verticiesToUpload = vertices](TiRHI::Device& device, TiRHI::CommandList& command)
             {
                 command.uploadBuffer(m_vertexBuffer, 0,
                                      std::as_bytes(std::span(verticiesToUpload.data(), verticiesToUpload.size())));
@@ -395,8 +396,8 @@ protected:
             return;
         }
 
-        pushRenderCommand(
-            [this, indicesToUpload = indices](TiRHI::CommandList& command)
+        pushRhiCommand(
+            [this, indicesToUpload = indices](TiRHI::Device& device, TiRHI::CommandList& command)
             {
                 command.transitionResource(m_indexBuffer, TiRHI::ResourceState::CopyDestination);
                 command.uploadBuffer(m_indexBuffer, 0,

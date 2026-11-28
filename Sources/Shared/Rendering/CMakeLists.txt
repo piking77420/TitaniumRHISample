@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.26)
 set(SOURCES
     GpuResource.cpp
     GpuResource.hpp
+    StaticMesh.cpp
+    StaticMesh.hpp
     Texture.cpp
     Texture.hpp
 )
@@ -16,6 +18,9 @@ target_include_directories(
 )
 
 target_link_libraries(Rendering
-    PRIVATE
+    PUBLIC
         TitaniumRHI
+        MathLib
+    PRIVATE
+        Core
 )

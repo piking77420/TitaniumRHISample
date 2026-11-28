@@ -109,12 +109,12 @@ namespace Ti::Plateform
         if (!cmd.beginRecord())
             return;
 
-        if (!m_pendingRenderCommand.empty())
+        if (!m_rhiCommands.empty())
         {
             TiRHI::DebugScope _(cmd, "Upload"sv, std::array{0.0f, 0.0f, 1.0f, 1.0f});
-            for (auto& f : m_pendingRenderCommand)
-                f(cmd);
-            m_pendingRenderCommand.clear();
+            for (auto& f : m_rhiCommands)
+                f(getDevice(), cmd);
+            m_rhiCommands.clear();
         }
 
         onRecord(cmd, swapChain);

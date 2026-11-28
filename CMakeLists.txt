@@ -16,6 +16,16 @@ endif()
 add_subdirectory("${THIRD_PARTY_DIR}/TitaniumShaderCompiler")
 add_subdirectory("${THIRD_PARTY_DIR}/TitaniumRHI")
 add_subdirectory("${THIRD_PARTY_DIR}/glfw")
+
+##assimp
+set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_SAMPLES OFF CACHE BOOL "" FORCE)
+set(ASSIMP_INSTALL OFF CACHE BOOL "" FORCE)
+
+add_subdirectory("${THIRD_PARTY_DIR}/assimp" EXCLUDE_FROM_ALL)
+
+
 ## ignore Imgui exemples
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
     "${THIRD_PARTY_DIR}/Imgui/examples*"

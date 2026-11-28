@@ -20,6 +20,8 @@
 #include <Common/CameraExemple.hpp>
 #include <Assets/Image.hpp>
 #include <Assets/Texture.hpp>
+#include <Assets/ModelImporter.hpp>
+#include <Assets/StaticMesh.hpp>
 #include <Rendering/Texture.hpp>
 #include <Io/File.hpp>
 #include <Core/Camera.hpp>
@@ -28,6 +30,7 @@
 #include <Core/Math/Projection.hpp>
 #include <Core/Math/View.hpp>
 #include <Common/CameraController.hpp>
+#include <Rendering/StaticMesh.hpp>
 #include <Matrix4x4.hpp>
 #include <Vector3.hpp>
 #include <Vector2.hpp>
@@ -41,66 +44,6 @@ struct FrameConstantBuffer
     MathLib::Matrix4x4f wvp;
 } frameConstantBuffer;
 
-struct Vertex
-{
-    MathLib::Vector3f position;
-    MathLib::Vector2f uv;
-};
-
-std::array<Vertex, 24> vertices = {{// Front (+Z)
-                                    {MathLib::Vector3f{-0.5f, -0.5f, 0.5f}, MathLib::Vector2f{0.0f, 1.0f}},
-                                    {MathLib::Vector3f{0.5f, -0.5f, 0.5f}, MathLib::Vector2f{1.0f, 1.0f}},
-                                    {MathLib::Vector3f{0.5f, 0.5f, 0.5f}, MathLib::Vector2f{1.0f, 0.0f}},
-                                    {MathLib::Vector3f{-0.5f, 0.5f, 0.5f}, MathLib::Vector2f{0.0f, 0.0f}},
-
-                                    // Back (-Z)
-                                    {MathLib::Vector3f{0.5f, -0.5f, -0.5f}, MathLib::Vector2f{0.0f, 1.0f}},
-                                    {MathLib::Vector3f{-0.5f, -0.5f, -0.5f}, MathLib::Vector2f{1.0f, 1.0f}},
-                                    {MathLib::Vector3f{-0.5f, 0.5f, -0.5f}, MathLib::Vector2f{1.0f, 0.0f}},
-                                    {MathLib::Vector3f{0.5f, 0.5f, -0.5f}, MathLib::Vector2f{0.0f, 0.0f}},
-
-                                    // Left (-X)
-                                    {MathLib::Vector3f{-0.5f, -0.5f, -0.5f}, MathLib::Vector2f{0.0f, 1.0f}},
-                                    {MathLib::Vector3f{-0.5f, -0.5f, 0.5f}, MathLib::Vector2f{1.0f, 1.0f}},
-                                    {MathLib::Vector3f{-0.5f, 0.5f, 0.5f}, MathLib::Vector2f{1.0f, 0.0f}},
-                                    {MathLib::Vector3f{-0.5f, 0.5f, -0.5f}, MathLib::Vector2f{0.0f, 0.0f}},
-
-                                    // Right (+X)
-                                    {MathLib::Vector3f{0.5f, -0.5f, 0.5f}, MathLib::Vector2f{0.0f, 1.0f}},
-                                    {MathLib::Vector3f{0.5f, -0.5f, -0.5f}, MathLib::Vector2f{1.0f, 1.0f}},
-                                    {MathLib::Vector3f{0.5f, 0.5f, -0.5f}, MathLib::Vector2f{1.0f, 0.0f}},
-                                    {MathLib::Vector3f{0.5f, 0.5f, 0.5f}, MathLib::Vector2f{0.0f, 0.0f}},
-
-                                    // Top (+Y)
-                                    {MathLib::Vector3f{-0.5f, 0.5f, 0.5f}, MathLib::Vector2f{0.0f, 1.0f}},
-                                    {MathLib::Vector3f{0.5f, 0.5f, 0.5f}, MathLib::Vector2f{1.0f, 1.0f}},
-                                    {MathLib::Vector3f{0.5f, 0.5f, -0.5f}, MathLib::Vector2f{1.0f, 0.0f}},
-                                    {MathLib::Vector3f{-0.5f, 0.5f, -0.5f}, MathLib::Vector2f{0.0f, 0.0f}},
-
-                                    // Bottom (-Y)
-                                    {MathLib::Vector3f{-0.5f, -0.5f, -0.5f}, MathLib::Vector2f{0.0f, 1.0f}},
-                                    {MathLib::Vector3f{0.5f, -0.5f, -0.5f}, MathLib::Vector2f{1.0f, 1.0f}},
-                                    {MathLib::Vector3f{0.5f, -0.5f, 0.5f}, MathLib::Vector2f{1.0f, 0.0f}},
-                                    {MathLib::Vector3f{-0.5f, -0.5f, 0.5f}, MathLib::Vector2f{0.0f, 0.0f}}}};
-
-std::array<uint16_t, 36> indices = {{// Front (+Z)
-                                     0, 1, 2, 0, 2, 3,
-
-                                     // Back (-Z)
-                                     4, 5, 6, 4, 6, 7,
-
-                                     // Left (-X)
-                                     8, 9, 10, 8, 10, 11,
-
-                                     // Right (+X)
-                                     12, 13, 14, 12, 14, 15,
-
-                                     // Top (+Y)
-                                     16, 17, 18, 16, 18, 19,
-
-                                     // Bottom (-Y)
-                                     20, 21, 22, 20, 22, 23}};
-
 class DrawIndirect : public Ti::Common::CameraExemple
 {
 public:
@@ -113,21 +56,27 @@ public:
         , m_renderTargets(getDevice())
         , m_renderPassDescriptor(getDevice())
         , m_texture(getDevice())
-        , m_vertexBuffer(getDevice())
-        , m_indexBuffer(getDevice())
         , m_rootConstantBuffer(getDevice())
-        , m_cubeSet(getDevice())
-        , m_cubePipeline(getDevice())
+        , m_meshSet(getDevice())
+        , m_meshPipeline(getDevice())
     {
+        const fs::path meshPath = fs::path(TITANIUM_RESOURCE_DIR) / "stanford_dragon_vrip.glb";
+        m_staticMesh = Ti::Assets::ModelImporter(meshPath).makeStaticMesh(*this);
+        if (!m_staticMesh)
+        {
+            TI_LOG_FATAL(Plateform, "Failed to load mesh {}", meshPath.generic_string());
+        }
+
         setupSceneRenderPass();
         setupTexture();
-        setupVertexDescription();
         setupBuffer();
         setupDescriptorSet();
         setupPipeline();
     }
 
 protected:
+    Ti::Assets::AssetPtr<Ti::Assets::StaticMesh> m_staticMesh;
+
     TiRHI::Texture m_depthTexture;
 
     TiRHI::RenderTargets m_renderTargets;
@@ -136,25 +85,17 @@ protected:
 
     TiRHI::Texture m_texture;
 
-    TiRHI::Buffer m_vertexBuffer;
-
-    TiRHI::Buffer m_indexBuffer;
-
     TiRHI::Buffer m_rootConstantBuffer;
 
-    TiRHI::DescriptorSet m_cubeSet;
+    TiRHI::DescriptorSet m_meshSet;
 
-    std::array<TiRHI::VertexBindingDescription, 1> m_vertexBindingDescription;
+    TiRHI::GraphicPipeline m_meshPipeline;
 
-    std::array<TiRHI::VertexInputAttributeDescription, 2> m_vertexInputAttributeDescription;
+    MathLib::Vector3f m_meshPosition = MathLib::Vector3f::zero();
 
-    TiRHI::GraphicPipeline m_cubePipeline;
+    MathLib::Vector3f m_meshRotation = MathLib::Vector3f::zero();
 
-    MathLib::Vector3f m_cubePosition = MathLib::Vector3f::zero();
-
-    MathLib::Vector3f m_cubeRotation = MathLib::Vector3f::zero();
-
-    MathLib::Vector3f m_cubeScaling = MathLib::Vector3f(1.f, 1.f, 1.f);
+    MathLib::Vector3f m_meshScaling = MathLib::Vector3f(1.f, 1.f, 1.f);
 
     void onResizeWindow() final
     {
@@ -169,9 +110,9 @@ protected:
         static std::string windowName = [&]()
         { return std::string(getName()) + " " + std::string(TiRHI::toString(getRHI().getApi())); }();
         ImGui::Begin(windowName.c_str());
-        ImGui::DragFloat3("Postion", reinterpret_cast<float*>(&m_cubePosition));
-        ImGui::DragFloat3("Rotation", reinterpret_cast<float*>(&m_cubeRotation));
-        ImGui::DragFloat3("Scaling", reinterpret_cast<float*>(&m_cubeScaling));
+        ImGui::DragFloat3("Postion", reinterpret_cast<float*>(&m_meshPosition));
+        ImGui::DragFloat3("Rotation", reinterpret_cast<float*>(&m_meshRotation));
+        ImGui::DragFloat3("Scaling", reinterpret_cast<float*>(&m_meshScaling));
         ImGui::End();
     }
 
@@ -181,7 +122,7 @@ protected:
         const MathLib::Matrix4x4f projection = Ti::Core::Math::perspectiveRH(1.39626f, aspect, 0.1f, 1000.0f);
         assert(projection == m_camera.getProjection());
         const MathLib::Matrix4x4f model =
-            MathLib::trs<float>(m_cubePosition, m_cubeRotation * MathLib::DegToRadf, m_cubeScaling);
+            MathLib::trs<float>(m_meshPosition, m_meshRotation * MathLib::DegToRadf, m_meshScaling);
         const MathLib::Matrix4x4f wvp = projection * m_camera.getView() * model;
 
         if (std::byte* ptr = m_rootConstantBuffer.beginDynamicUpdate())
@@ -222,12 +163,20 @@ protected:
             TiRHI::Rect2D scissors;
             scissors.setOffset({0, 0}).setExtend(getSwapChain().getExtend());
             cmd.setScissors(scissors);
-            cmd.bindPipeline(m_cubePipeline);
-            cmd.bindDescriptorSet(m_cubeSet, 0);
-            cmd.bindVertexBuffer(0, 0, m_vertexBuffer);
-            cmd.bindIndexBuffer(m_indexBuffer, 0, TiRHI::IndexType::UInt16);
+            if (std::shared_ptr<Ti::Rendering::StaticMesh> renderStaticMesh = m_staticMesh->getStaticMesh())
+            {
+                if (std::optional<Ti::Rendering::StaticMesh::DrawCommand> drawCommand =
+                        renderStaticMesh->toDrawCommand())
+                {
+                    cmd.bindPipeline(m_meshPipeline);
+                    cmd.bindDescriptorSet(m_meshSet, 0);
+                    cmd.bindVertexBuffer(0, 0, *drawCommand->vertexBuffer);
+                    cmd.bindIndexBuffer(*drawCommand->indexBuffer, 0, drawCommand->indexType);
 
-            cmd.drawIndexed(static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+                    cmd.drawIndexed(static_cast<uint32_t>(drawCommand->indexCount), 1, 0, 0, 0);
+                }
+            }
+
             cmd.endRenderPass();
         }
         cmd.transitionResource(m_sceneViewTexture, TiRHI::ResourceState::ShaderResource);
@@ -301,55 +250,37 @@ protected:
             }
         }
 
-        pushRenderCommand(
-            [this, size = image.getTotalSize(), data = std::move(image).acquireData()](TiRHI::CommandList& command)
+        pushRhiCommand(
+            [this, size = image.getTotalSize(), data = std::move(image).acquireData()](TiRHI::Device& device,
+                                                                                       TiRHI::CommandList& command)
             {
                 command.upload2d(m_texture, std::as_bytes(std::span(data.get(), size)));
                 command.transitionResource(m_texture, TiRHI::ResourceState::ShaderResource);
             });
     }
 
-    void setupVertexDescription()
-    {
-        m_vertexBindingDescription[0].binding = 0;
-        m_vertexBindingDescription[0].stride = sizeof(Vertex);
-        m_vertexBindingDescription[0].vertexInputRate = TiRHI::VertexInputRate::Vertex;
-
-        // Position
-        m_vertexInputAttributeDescription[0].binding = 0;
-        m_vertexInputAttributeDescription[0].format = TiRHI::Format::R32G32B32Float;
-        m_vertexInputAttributeDescription[0].offset = offsetof(Vertex, position);
-        m_vertexInputAttributeDescription[0].location = 0;
-
-        // UV
-        m_vertexInputAttributeDescription[1].binding = 0;
-        m_vertexInputAttributeDescription[1].format = TiRHI::Format::R32G32Float;
-        m_vertexInputAttributeDescription[1].offset = offsetof(Vertex, uv);
-        m_vertexInputAttributeDescription[1].location = 1;
-    }
-
     void setupPipeline()
     {
-        m_cubePipeline = std::move(compilePsoVertexFrag("cube.hlsl"sv, L"cube.vert.spriv", L"cube.pixel.spriv"));
+        m_meshPipeline = std::move(compilePsoVertexFrag("cube.hlsl"sv, L"cube.vert.spriv", L"cube.pixel.spriv"));
 
-        m_cubePipeline.setName("Cube Pipeline")
+        m_meshPipeline.setName("Mesh Pipeline")
             .setDescriptorSetLayoutEntries(
-                std::array{TiRHI::GraphicPipeline::DescriptorSetLayoutEntry{m_cubeSet.getBindingsLayout(), 0}})
-            .setVertexBindingDescription(m_vertexBindingDescription)
-            .setVertexInputAttributeDescription(m_vertexInputAttributeDescription)
+                std::array{TiRHI::GraphicPipeline::DescriptorSetLayoutEntry{m_meshSet.getBindingsLayout(), 0}})
+            .setVertexBindingDescription(Ti::Rendering::StaticMesh::getVertexBindingDescription())
+            .setVertexInputAttributeDescription(Ti::Rendering::StaticMesh::getVertexInputAttributeDescription())
             .setRenderPassDescritptor(&m_renderPassDescriptor)
             .setDepthCompareOp(TiRHI::CompareOp::Less);
 
-        if (!m_cubePipeline.build())
+        if (!m_meshPipeline.build())
         {
-            TI_LOG_FATAL(Core, "Failed to build pipeline {}", m_cubePipeline.getName());
+            TI_LOG_FATAL(Core, "Failed to build pipeline {}", m_meshPipeline.getName());
         }
     }
 
     void setupDescriptorSet()
     {
         const bool success =
-            m_cubeSet.setName("Cube Set")
+            m_meshSet.setName("Mesh Set")
                 .bindSampledTexture(TiRHI::ShaderStageFlags::Pixel, &m_texture, &m_samplerNearestRepeat, 0)
                 .bindConstantBuffer(TiRHI::ShaderStageFlags::Vertex, &m_rootConstantBuffer, 1)
                 .build();
@@ -362,54 +293,12 @@ protected:
 
     void setupBuffer()
     {
-        bool success = m_vertexBuffer.setName("VertexBuffer")
-                           .setMemoryType(TiRHI::BufferMemoryType::Default)
-                           .setUpdateMode(TiRHI::BufferUpdateMode::Static)
-                           .setUsage(TiRHI::BufferUsage::Vertex | TiRHI::BufferUsage::CopyDestination)
-                           .setSize(sizeof(vertices))
-                           .build();
-        if (!success)
-        {
-            TI_LOG_FATAL(Rendering, "Failed to build VertexBuffer");
-            return;
-        }
-
-        pushRenderCommand(
-            [this, verticiesToUpload = vertices](TiRHI::CommandList& command)
-            {
-                command.uploadBuffer(m_vertexBuffer, 0,
-                                     std::as_bytes(std::span(verticiesToUpload.data(), verticiesToUpload.size())));
-                command.transitionResource(m_vertexBuffer, TiRHI::ResourceState::VertexBuffer);
-            });
-
-        success = m_indexBuffer.setName("IndexBuffer")
-                      .setMemoryType(TiRHI::BufferMemoryType::Default)
-                      .setUpdateMode(TiRHI::BufferUpdateMode::Static)
-                      .setUsage(TiRHI::BufferUsage::Index | TiRHI::BufferUsage::CopyDestination)
-                      .setSize(sizeof(indices))
-                      .build();
-
-        if (!success)
-        {
-            TI_LOG_FATAL(Rendering, "Failed to build Index Buffer");
-            return;
-        }
-
-        pushRenderCommand(
-            [this, indicesToUpload = indices](TiRHI::CommandList& command)
-            {
-                command.transitionResource(m_indexBuffer, TiRHI::ResourceState::CopyDestination);
-                command.uploadBuffer(m_indexBuffer, 0,
-                                     std::as_bytes(std::span(indicesToUpload.data(), indicesToUpload.size())));
-                command.transitionResource(m_indexBuffer, TiRHI::ResourceState::IndexBuffer);
-            });
-
-        success = m_rootConstantBuffer.setName("ConstantBuffer")
-                      .setMemoryType(TiRHI::BufferMemoryType::Upload)
-                      .setUpdateMode(TiRHI::BufferUpdateMode::Dynamic)
-                      .setUsage(TiRHI::BufferUsage::Constant)
-                      .setSize(getDevice().alignConstantBuffer(sizeof(frameConstantBuffer)))
-                      .build();
+        const bool success = m_rootConstantBuffer.setName("ConstantBuffer")
+                                 .setMemoryType(TiRHI::BufferMemoryType::Upload)
+                                 .setUpdateMode(TiRHI::BufferUpdateMode::Dynamic)
+                                 .setUsage(TiRHI::BufferUsage::Constant)
+                                 .setSize(getDevice().alignConstantBuffer(sizeof(frameConstantBuffer)))
+                                 .build();
 
         if (!success)
         {

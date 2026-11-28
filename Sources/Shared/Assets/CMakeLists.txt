@@ -6,11 +6,25 @@ set(SOURCES
     AssetReference.hpp
     Image.cpp
     Image.hpp
+    ModelImporter.cpp
+    ModelImporter.hpp
+    StaticMesh.cpp
+    StaticMesh.hpp
     Texture.cpp
     Texture.hpp
 )
 
 add_library(Assets STATIC ${SOURCES})
+
+
+target_link_libraries(
+    Assets
+    PUBLIC
+        Rendering
+    PRIVATE
+        MathLib
+        assimp::assimp
+)
 
 target_include_directories(
     Assets
