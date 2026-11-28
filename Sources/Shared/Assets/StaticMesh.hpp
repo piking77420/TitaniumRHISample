@@ -8,11 +8,6 @@
 #include <Assets/Asset.hpp>
 #include <Rendering/StaticMesh.hpp>
 
-namespace Ti::Plateform
-{
-    class App;
-} // Ti::Plateform
-
 namespace Ti::Assets
 {
     class StaticMesh : public Asset
@@ -20,8 +15,8 @@ namespace Ti::Assets
     public:
         StaticMesh() = delete;
         ~StaticMesh() = default;
-        StaticMesh(Plateform::App& App, std::string name, std::vector<Rendering::StaticMesh::Vertex> verticies,
-                   std::vector<uint32_t> indicies);
+        StaticMesh(Rendering::RhiThread& rhiThread, std::string name,
+                   std::vector<Rendering::StaticMesh::Vertex> vertices, std::vector<uint32_t> indices);
 
         std::shared_ptr<Rendering::StaticMesh> getStaticMesh() const
         {

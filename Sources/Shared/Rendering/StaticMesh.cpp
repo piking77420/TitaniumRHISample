@@ -1,5 +1,5 @@
 #include <Rendering/StaticMesh.hpp>
-#include <Plateform/App.hpp>
+#include <Rendering/RhiThread.hpp>
 
 #include <limits>
 #include <span>
@@ -9,7 +9,7 @@
 
 namespace Ti::Rendering
 {
-    StaticMesh::StaticMesh(Ti::Plateform::App& app, std::string_view staticMeshName, std::vector<Vertex> verticies,
+    StaticMesh::StaticMesh(RhiThread& rhiThread, std::string_view staticMeshName, std::vector<Vertex> verticies,
                            std::vector<uint32_t> indices)
 
     {
@@ -28,7 +28,7 @@ namespace Ti::Rendering
             }
         }
 
-        app.pushRhiCommand(
+        rhiThread.pushOnRecordCommand(
             [this, vertices = std::move(verticies), indices = std::move(indices),
              name = std::string(staticMeshName)](TiRHI::Device& device, TiRHI::CommandList& cmd) mutable
             {

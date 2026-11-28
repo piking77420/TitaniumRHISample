@@ -3,6 +3,7 @@
 
 #include <string_view>
 #include <tuple>
+#include <utility>
 
 #include <Titanium/TitaniumHeader.hpp>
 #include <Titanium/RHI-DebugScope.hpp>
@@ -10,6 +11,7 @@
 #include <Plateform/App.hpp>
 #include <Io/Io.hpp>
 #include <ImGuiIntegration/ImGuiIntegration.hpp>
+#include <Rendering/RhiThread.hpp>
 
 namespace Ti::Plateform
 {
@@ -45,31 +47,6 @@ namespace Ti::Plateform
 
         virtual void onSwapChainRenderPass(TiRHI::CommandList& cmd, TiRHI::SwapChain& swapChain) = 0;
 
-        TiRHI::RHI& getRHI()
-        {
-            return m_rhi;
-        }
-
-        const TiRHI::RHI& getRHI() const
-        {
-            return m_rhi;
-        }
-
-        TiRHI::Device& getDevice()
-        {
-            return m_device;
-        }
-
-        TiRHI::SwapChain& getSwapChain()
-        {
-            return m_swapChain;
-        }
-
-        const TiRHI::SwapChain& getSwapChain() const
-        {
-            return m_swapChain;
-        }
-
         const Ti::Io::Io& getIo() const
         {
             return m_io;
@@ -78,6 +55,36 @@ namespace Ti::Plateform
         Ti::Plateform::Window& getWindow()
         {
             return m_window;
+        }
+
+        Ti::Rendering::RhiThread& getRhiThread()
+        {
+            return m_rhiThread;
+        }
+
+        TiRHI::RHI& getRHI()
+        {
+            return m_rhiThread.getRHI();
+        }
+
+        TiRHI::Device& getDevice()
+        {
+            return m_rhiThread.getDevice();
+        }
+
+        TiRHI::SwapChain& getSwapChain()
+        {
+            return m_rhiThread.getSwapChain();
+        }
+
+        void pushRhiCommand(Rendering::RhiCommand command)
+        {
+            m_rhiThread.pushRhiCommand(std::move(command));
+        }
+
+        void pushRhiOnRecordCommand(Rendering::RhiOnRecordCommand command)
+        {
+            m_rhiThread.pushOnRecordCommand(std::move(command));
         }
 
         static constexpr size_t ImageCount = 3;
@@ -89,15 +96,12 @@ namespace Ti::Plateform
 
         Ti::Plateform::Window m_window;
 
-        TiRHI::RHI m_rhi;
-
-        TiRHI::Device m_device;
-
-        TiRHI::Surface m_surface;
-
-        TiRHI::SwapChain m_swapChain;
-
-        TiRHI::CommandList m_cmdList;
+        // Rhi Thread is not in the upper class
+        // because exemple should be basic and dont use multithread
+        // however to keep the api consistant we use it here as mono thread
+        // with this each module can use Ti::Rendering::RhiThread
+        // important to use module in the future render(multithread) and the exemples
+        Ti::Rendering::RhiThread m_rhiThread;
 
         Ti::ThirdParty::ImguiIntegration m_imguiIntegration;
     };

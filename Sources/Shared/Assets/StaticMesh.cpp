@@ -4,16 +4,17 @@
 
 namespace Ti::Assets
 {
-    StaticMesh::StaticMesh(Plateform::App& App, std::string name, std::vector<Rendering::StaticMesh::Vertex> verticies,
-                           std::vector<uint32_t> indicies)
+    StaticMesh::StaticMesh(Rendering::RhiThread& rhiThread, std::string name,
+                           std::vector<Rendering::StaticMesh::Vertex> vertices, std::vector<uint32_t> indices)
         : Asset(std::move(name))
     {
         if (m_cpuAccesible)
         {
-            m_vertices = verticies;
-            m_indices = indicies;
+            m_vertices = vertices;
+            m_indices = indices;
         }
-        m_staticMesh.reset(new Rendering::StaticMesh(App, getName(), std::move(verticies), std::move(indicies)));
+        m_staticMesh.reset(
+            new Rendering::StaticMesh(rhiThread, getName(), std::move(vertices), std::move(indices)));
     }
 
 } // namespace Ti::Assets

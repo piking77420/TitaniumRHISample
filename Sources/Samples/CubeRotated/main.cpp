@@ -301,7 +301,7 @@ protected:
             }
         }
 
-        pushRhiCommand(
+        pushRhiOnRecordCommand(
             [this, size = image.getTotalSize(), data = std::move(image).acquireData()](TiRHI::Device& device,
                                                                                        TiRHI::CommandList& command)
             {
@@ -375,7 +375,7 @@ protected:
             return;
         }
 
-        pushRhiCommand(
+        pushRhiOnRecordCommand(
             [this, verticiesToUpload = vertices](TiRHI::Device& device, TiRHI::CommandList& command)
             {
                 command.uploadBuffer(m_vertexBuffer, 0,
@@ -396,7 +396,7 @@ protected:
             return;
         }
 
-        pushRhiCommand(
+        pushRhiOnRecordCommand(
             [this, indicesToUpload = indices](TiRHI::Device& device, TiRHI::CommandList& command)
             {
                 command.transitionResource(m_indexBuffer, TiRHI::ResourceState::CopyDestination);

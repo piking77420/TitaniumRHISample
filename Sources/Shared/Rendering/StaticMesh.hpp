@@ -14,13 +14,9 @@
 #include <Vector2.hpp>
 #include <Matrix4x4.hpp>
 
-namespace Ti::Plateform
-{
-    class App;
-} // Ti::Plateform
-
 namespace Ti::Rendering
 {
+    class RhiThread;
 
     class StaticMesh : public GpuResource
     {
@@ -34,7 +30,7 @@ namespace Ti::Rendering
 
         StaticMesh() = default;
         // TODO PUT RHI THREAD IN PARAM AND PER REF IN ORDER TO DESTROY
-        explicit StaticMesh(Ti::Plateform::App& app, std::string_view staticMeshName, std::vector<Vertex> verticies,
+        explicit StaticMesh(RhiThread& rhiThread, std::string_view staticMeshName, std::vector<Vertex> verticies,
                             std::vector<uint32_t> indicies);
         ~StaticMesh() override = default;
 

@@ -3,6 +3,10 @@ cmake_minimum_required(VERSION 3.26)
 set(SOURCES
     GpuResource.cpp
     GpuResource.hpp
+    RenderThread.cpp
+    RenderThread.hpp
+    RhiThread.cpp
+    RhiThread.hpp
     StaticMesh.cpp
     StaticMesh.hpp
     Texture.cpp

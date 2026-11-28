@@ -22,4 +22,5 @@ target_link_libraries(Plateform
         glfw
         TitaniumRHI
         ImGuiIntegration
+        Rendering
 )

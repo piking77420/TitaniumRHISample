@@ -16,7 +16,7 @@ namespace Ti::Assets
     {
     }
 
-    AssetPtr<StaticMesh> ModelImporter::makeStaticMesh(Plateform::App& app)
+    AssetPtr<StaticMesh> ModelImporter::makeStaticMesh(Rendering::RhiThread& rhiThread)
     {
         if (!std::filesystem::exists(m_path))
             return {};
@@ -80,7 +80,8 @@ namespace Ti::Assets
             }
         }
 
-        return std::make_shared<StaticMesh>(app, m_path.stem().string(), std::move(vertices), std::move(indices));
+        return std::make_shared<StaticMesh>(rhiThread, m_path.stem().string(), std::move(vertices),
+                                            std::move(indices));
     }
 
 } // namespace Ti::Assets

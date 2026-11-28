@@ -1,36 +1,7 @@
 #include <Plateform/BaseExemple.hpp>
 #include <Core/Log.hpp>
+#include <utility>
 using namespace std::literals;
-
-void debugCallBack(const std::wstring& message, TiRHI::RhiApi api, TiRHI::RhiMessageSeverity severity)
-{
-    const std::string s = std::string{message.begin(), message.end()};
-    const std::string_view apiName = TiRHI::toString(api);
-
-    switch (severity)
-    {
-    case TiRHI::RhiMessageSeverity::Verbose:
-        TI_LOG_VERBOSE(RHI, "[{}] {}", apiName, s);
-        break;
-
-    case TiRHI::RhiMessageSeverity::Info:
-        TI_LOG_INFO(RHI, "[{}] {}", apiName, s);
-        break;
-
-    case TiRHI::RhiMessageSeverity::Warning:
-        TI_LOG_WARNING(RHI, "[{}] {}", apiName, s);
-        break;
-
-    case TiRHI::RhiMessageSeverity::Error:
-        TI_LOG_ERROR(RHI, "[{}] {}", apiName, s);
-        break;
-
-    case TiRHI::RhiMessageSeverity::Fatal:
-        TI_LOG_FATAL(RHI, "[{}] {}", apiName, s);
-        break;
-    }
-}
-
 namespace Ti::Plateform
 {
     BaseExemple::~BaseExemple()
@@ -40,55 +11,11 @@ namespace Ti::Plateform
     BaseExemple::BaseExemple(std::string name)
         : App(std::move(name))
         , m_window(static_cast<int>(WindowWidthBaseSize), static_cast<int>(WindowHeightBaseSize), getName().data())
-        , m_rhi(
-              []() -> TiRHI::RhiCreate
-              {
-                  TiRHI::RhiCreate create;
-                  create.useDebugLabel = true;
-                  create.frameInFlight = 3;
-                  create.logCallback = debugCallBack;
-
-                  return create;
-              }())
-        , m_device(getRHI())
-        , m_surface(getDevice())
-        , m_swapChain(getDevice())
-        , m_cmdList(getDevice())
+        , m_rhiThread(m_window.getWindowHandle(), static_cast<uint32_t>(m_window.getWidth()),
+                      static_cast<uint32_t>(m_window.getHeight()))
     {
-        // clang-format off
-        
-        m_surface
-            .setName("WindowSurface")
-            .build(m_window.getWindowHandle());
-        // clang-format on
-
-        // clang-format off
-        m_device.setName("My Device")
-                .build(m_surface, m_rhi.getAdapters());
-        TI_LOG_INFO(Core, "Device Choosen : {}",  m_device.getSourceAdapter(m_rhi).getName());
-        // clang-format 
-        
-
-         // clang-format off
-         m_swapChain
-            .setWidth(static_cast<uint32_t>(m_window.getWidth()))
-            .setHeight(static_cast<uint32_t>(m_window.getHeight()))
-            .setName("SwapChain")
-            .setVsync(true)
-            .setImageCount(ImageCount)
-            .build(m_surface);
-         // clang-format 
-
-            // clang-format off
-            m_cmdList
-                .setName("CommandList");
-            m_cmdList.build();
-        // clang-format on
-
         if (!m_imguiIntegration.build(getDevice(), getWindow(), getSwapChain()))
-        {
             TI_LOG_ERROR(Core, "Failed to Init Imgui");
-        }
     }
 
     void BaseExemple::handleResize()
@@ -99,8 +26,15 @@ namespace Ti::Plateform
         }
         // To avoid device wait we need to use deferred destroy
         // m_device.wait();
-        m_swapChain.setWidth(m_window.getWidth()).setHeight(m_window.getHeight());
-        m_swapChain.recreateSwapChain(m_surface);
+        const uint32_t width = static_cast<uint32_t>(m_window.getWidth());
+        const uint32_t height = static_cast<uint32_t>(m_window.getHeight());
+        m_rhiThread.pushRhiCommand(
+            [width, height](Rendering::RhiThread& thread)
+            {
+                if (!thread.getSwapChain().setWidth(width).setHeight(height).recreateSwapChain(thread.getSurface()))
+                    TI_LOG_ERROR(RHI, "Failed to recreate swap chain after resize");
+            });
+        m_rhiThread.consumeCommands();
         onResizeWindow();
     }
 
@@ -109,29 +43,23 @@ namespace Ti::Plateform
         if (!cmd.beginRecord())
             return;
 
-        if (!m_rhiCommands.empty())
-        {
-            TiRHI::DebugScope _(cmd, "Upload"sv, std::array{0.0f, 0.0f, 1.0f, 1.0f});
-            for (auto& f : m_rhiCommands)
-                f(getDevice(), cmd);
-            m_rhiCommands.clear();
-        }
+        m_rhiThread.consumeOnRecordRhiCommands();
 
         onRecord(cmd, swapChain);
 
         {
             TiRHI::DebugScope _(cmd, "SwapChain Pass"sv, std::array{1.0f, 1.0f, 0.0f, 1.0f});
-            TiRHI::RenderTargets& renderTarget = getSwapChain().getCurrentRenderTargets();
+            TiRHI::RenderTargets& renderTarget = swapChain.getCurrentRenderTargets();
 
             TiRHI::Rect2D renderArea{};
-            renderArea.setExtend(getSwapChain().getExtend());
+            renderArea.setExtend(swapChain.getExtend());
 
             std::array<TiRHI::ClearValueColor, 1> clearColor;
             clearColor[0].color = AppClearColor;
             TiRHI::BeginRenderPass renderPass{};
             renderPass.setRenderArea(renderArea).setClearColors(clearColor);
 
-            cmd.transitionResource(getSwapChain().getCurrentSwapChainTexture(), TiRHI::ResourceState::RenderTarget);
+            cmd.transitionResource(swapChain.getCurrentSwapChainTexture(), TiRHI::ResourceState::RenderTarget);
             if (cmd.beginRenderPass(renderPass, renderTarget))
             {
                 onSwapChainRenderPass(cmd, swapChain);
@@ -143,7 +71,7 @@ namespace Ti::Plateform
 
                 cmd.endRenderPass();
             }
-            cmd.transitionResource(getSwapChain().getCurrentSwapChainTexture(), TiRHI::ResourceState::Present);
+            cmd.transitionResource(swapChain.getCurrentSwapChainTexture(), TiRHI::ResourceState::Present);
         }
         cmd.endRecord();
     }
@@ -169,24 +97,29 @@ namespace Ti::Plateform
             handleResize();
             update();
             {
-                m_device.beginFrame();
+                m_rhiThread.consumeCommands();
+                TiRHI::Device& device = getDevice();
+                TiRHI::SwapChain& swapChain = getSwapChain();
+                TiRHI::CommandList& commandList = m_rhiThread.getCommandList();
+
+                device.beginFrame();
                 render();
 
-                std::array frames = {m_swapChain.acquireNextImage()};
+                std::array frames = {swapChain.acquireNextImage()};
 
                 if (frames[0].getSucces())
                 {
-                    record(m_cmdList, m_swapChain);
+                    record(commandList, swapChain);
 
                     const std::array submitDesc = {
-                        TiRHI::Device::SubmitPresentDesc{.commandList = &m_cmdList, .acquireFrames = frames}};
+                        TiRHI::Device::SubmitPresentDesc{.commandList = &commandList, .acquireFrames = frames}};
 
-                    m_device.submitPresent(submitDesc);
-                    m_rhi.nextFrame();
+                    device.submitPresent(submitDesc);
+                    getRHI().nextFrame();
                 }
             }
         }
-        m_device.wait();
+        getDevice().wait();
     }
 
 } // Ti::Core::Platerform

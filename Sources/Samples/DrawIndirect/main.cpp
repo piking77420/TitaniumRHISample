@@ -61,7 +61,7 @@ public:
         , m_meshPipeline(getDevice())
     {
         const fs::path meshPath = fs::path(TITANIUM_RESOURCE_DIR) / "stanford_dragon_vrip.glb";
-        m_staticMesh = Ti::Assets::ModelImporter(meshPath).makeStaticMesh(*this);
+        m_staticMesh = Ti::Assets::ModelImporter(meshPath).makeStaticMesh(getRhiThread());
         if (!m_staticMesh)
         {
             TI_LOG_FATAL(Plateform, "Failed to load mesh {}", meshPath.generic_string());
@@ -250,7 +250,7 @@ protected:
             }
         }
 
-        pushRhiCommand(
+        pushRhiOnRecordCommand(
             [this, size = image.getTotalSize(), data = std::move(image).acquireData()](TiRHI::Device& device,
                                                                                        TiRHI::CommandList& command)
             {

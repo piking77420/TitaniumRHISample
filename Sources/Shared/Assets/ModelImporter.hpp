@@ -4,9 +4,9 @@
 #include <filesystem>
 #include <Assets/AssetReference.hpp>
 
-namespace Ti::Plateform
+namespace Ti::Rendering
 {
-    class App;
+    class RhiThread;
 }
 
 namespace Ti::Assets
@@ -20,7 +20,7 @@ namespace Ti::Assets
         ~ModelImporter() = default;
         ModelImporter(const std::filesystem::path& path);
 
-        AssetPtr<StaticMesh> makeStaticMesh(Plateform::App& app);
+        AssetPtr<StaticMesh> makeStaticMesh(Rendering::RhiThread& rhiThread);
 
     private:
         std::filesystem::path m_path;
