@@ -31,10 +31,10 @@ public:
 
     TriangleTexturedExemple(std::string name)
         : Ti::Common::Exemple(std::move(name))
-        , m_texture(getRHI())
-        , m_samplerNearestRepeat(getRHI())
-        , m_cubePipeline(getRHI())
-        , m_cubeSet(getRHI())
+        , m_texture(getDevice())
+        , m_samplerNearestRepeat(getDevice())
+        , m_cubePipeline(getDevice())
+        , m_cubeSet(getDevice())
     {
         setupTexture();
         setupSampler();
@@ -68,7 +68,7 @@ protected:
                     .setFlags(TiRHI::TextureFlags::CopyDestination | TiRHI::TextureFlags::ShaderResource)
                     .setFormat(TiRHI::Format::R8G8B8A8UNorm)
                     .setType(TiRHI::TextureType::Texture2D)
-                    .build(getDevice());
+                    .build();
 
             if (!result)
             {
@@ -98,7 +98,7 @@ protected:
                                  .setMaxLod(0.0f) // Only mip level 0 is uploaded.
                                  .setAnisotropyEnabled(false)
                                  .setDepthCompareEnabled(false)
-                                 .build(getDevice());
+                                 .build();
         if (!success)
         {
             TI_LOG_FATAL(Rendering, "Failed to build sampler");
@@ -125,7 +125,7 @@ protected:
                  .setDescriptorSetLayoutEntries(
                      std::array{TiRHI::GraphicPipeline::DescriptorSetLayoutEntry{m_cubeSet.getBindingsLayout(), 0}})
                  .setRenderPassDescritptor(&getSwapChain().getRenderPassDescriptor())
-                 .build(getDevice()))
+                 .build())
         {
             TI_LOG_FATAL(Core, "Failed to build pipeline");
         }
@@ -133,9 +133,10 @@ protected:
 
     void setupDescriptorSet()
     {
-        const bool success = m_cubeSet.setName("Texture Descriptor Set")
-                                 .bindSampledTexture(TiRHI::ShaderStageFlags::Pixel, &m_texture, &m_samplerNearestRepeat, 0)
-                                 .build(getDevice());
+        const bool success =
+            m_cubeSet.setName("Texture Descriptor Set")
+                .bindSampledTexture(TiRHI::ShaderStageFlags::Pixel, &m_texture, &m_samplerNearestRepeat, 0)
+                .build();
 
         if (!success)
         {
@@ -151,7 +152,7 @@ protected:
     {
     }
 
-    void onSwapChainRenderPass(TiRHI::CommandList& cmd, TiRHI::SwapChain& swapChain)
+    void onSwapChainRenderPass(TiRHI::CommandList& cmd, TiRHI::SwapChain& swapChain) final
     {
         TiRHI::Viewport viewPort;
         viewPort.setPosition({0, 0}).setExtend(static_cast<TiRHI::Extend2DF>(getSwapChain().getExtend()));
@@ -164,6 +165,10 @@ protected:
         cmd.bindPipeline(m_cubePipeline);
         cmd.bindDescriptorSet(m_cubeSet, 0);
         cmd.draw(3, 1, 0, 0);
+    }
+
+    void onRender() final
+    {
     }
 };
 

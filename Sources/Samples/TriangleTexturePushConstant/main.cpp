@@ -31,7 +31,7 @@ public:
 
     TriangleTexturePushConstant(std::string name)
         : Ti::Common::Exemple(std::move(name))
-        , m_cubePipeline(getRHI())
+        , m_cubePipeline(getDevice())
     {
         setupPipeline();
     }
@@ -62,7 +62,7 @@ protected:
         if (!m_cubePipeline.setName("Base Pipeline")
                  .setPushConstant(pushConstant)
                  .setRenderPassDescritptor(&getSwapChain().getRenderPassDescriptor())
-                 .build(getDevice()))
+                 .build())
         {
             TI_LOG_FATAL(Core, "Failed to build pipeline");
         }
@@ -72,7 +72,7 @@ protected:
     {
     }
 
-    void onSwapChainRenderPass(TiRHI::CommandList& cmd, TiRHI::SwapChain& swapChain)
+    void onSwapChainRenderPass(TiRHI::CommandList& cmd, TiRHI::SwapChain& swapChain) final
     {
         TiRHI::Viewport viewPort;
         viewPort.setPosition({0, 0}).setExtend(static_cast<TiRHI::Extend2DF>(getSwapChain().getExtend()));
@@ -95,6 +95,11 @@ protected:
         ImGui::ColorPicker4("Triangle color", m_color.data(),
                             ImGuiColorEditFlags_Float | ImGuiColorEditFlags_PickerHueWheel);
         ImGui::End();
+    }
+
+    // Inherited via Exemple
+    void onRender() final
+    {
     }
 };
 

@@ -26,7 +26,7 @@ public:
 
     TriangleExemple(std::string name)
         : Ti::Common::Exemple(std::move(name))
-        , m_cubePipeline(getRHI())
+        , m_pipeline(getDevice())
     {
         using namespace Ti::ShaderCompiler;
         namespace fs = std::filesystem;
@@ -43,20 +43,20 @@ public:
         std::vector<CompileModuleData> moduleDatas = compileShader(resourceDir.generic_string().c_str(), entryPoint);
 
         for (auto& moduleDatas : moduleDatas)
-            m_cubePipeline.addModule(moduleDatas.stage, std::move(moduleDatas.data), std::move(moduleDatas.entryPoint));
+            m_pipeline.addModule(moduleDatas.stage, std::move(moduleDatas.data), std::move(moduleDatas.entryPoint));
 
-        if (!m_cubePipeline.setName("Base Pipeline")
+        if (!m_pipeline.setName("Base Pipeline")
                  .setRenderPassDescritptor(&getSwapChain().getRenderPassDescriptor())
-                 .build(getDevice()))
+                 .build())
         {
             TI_LOG_FATAL(Core, "Failed to build pipeline");
         }
     }
 
 protected:
-    TiRHI::GraphicPipeline m_cubePipeline;
+    TiRHI::GraphicPipeline m_pipeline;
 
-    void onSwapChainRenderPass(TiRHI::CommandList& cmd, TiRHI::SwapChain& swapChain)
+    void onSwapChainRenderPass(TiRHI::CommandList& cmd, TiRHI::SwapChain& swapChain) final
     {
         TiRHI::Viewport viewPort;
         viewPort.setPosition({0, 0}).setExtend(static_cast<TiRHI::Extend2DF>(swapChain.getExtend()));
@@ -66,15 +66,19 @@ protected:
         TiRHI::Rect2D scissors;
         scissors.setOffset({0, 0}).setExtend(swapChain.getExtend());
         cmd.setScissors(scissors);
-        cmd.bindPipeline(m_cubePipeline);
+        cmd.bindPipeline(m_pipeline);
         cmd.draw(3, 1, 0, 0);
     }
 
-    void onRecord([[maybe_unused]] TiRHI::CommandList& cmd, [[maybe_unused]] TiRHI::SwapChain& swapChain)
+    void onRecord([[maybe_unused]] TiRHI::CommandList& cmd, [[maybe_unused]] TiRHI::SwapChain& swapChain) final
     {
     }
 
-    void onUpdate()
+    void onUpdate() final
+    {
+    }
+
+    void onRender() final
     {
     }
 };
