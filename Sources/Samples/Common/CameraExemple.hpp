@@ -21,6 +21,8 @@ namespace Ti::Common
         Ti::Core::Camera m_camera;
 
         Ti::Common::CameraController m_cameraController;
+
+        void drawRHIInformation();
     };
 
 } // namespace Ti::Common
