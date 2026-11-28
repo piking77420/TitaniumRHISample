@@ -2,6 +2,7 @@
 
 #include <span>
 #include <Imgui.h>
+#include <Assets/ModelImporter.hpp>
 
 namespace Ti::Common
 {
@@ -179,6 +180,24 @@ namespace Ti::Common
     {
         const float aspect = static_cast<float>(getWindow().getWidth()) / static_cast<float>(getWindow().getHeight());
         m_camera.setAspectRation(aspect);
+    }
+
+    std::future<Assets::AssetPtr<Assets::StaticMesh>>
+    CameraExemple::loadAsyncStaticMesh(const std::filesystem::path& path)
+    {
+        return std::async(std::launch::async,
+                          [path = path, &rhiThread = getRhiThread()]() mutable -> Assets::AssetPtr<Assets::StaticMesh>
+                          {
+                              using namespace std::chrono_literals;
+
+                              Assets::ModelImporter modelLoad(path);
+                              auto staticMesh = modelLoad.makeStaticMesh(rhiThread);
+                              if (!staticMesh)
+                              {
+                                  TI_LOG_FATAL(Plateform, "Failed to load mesh {}", path.generic_string());
+                              }
+                              return staticMesh;
+                          });
     }
 
 } // Ti::Common

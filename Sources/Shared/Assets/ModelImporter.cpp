@@ -5,12 +5,27 @@
 #include <assimp/postprocess.h>
 
 #include <Assets/StaticMesh.hpp>
+#include <Assets/MeshSection.hpp>
+#include <limits>
+#include <vector>
 #include <Vector3.hpp>
 #include <Vector2.hpp>
-#include <Matrix4x4.hpp>
 
 namespace Ti::Assets
 {
+    namespace
+    {
+        void generateMeshSectionFromAssimpNode(const aiNode& node, const std::vector<MeshSection>& sectionsByMesh,
+                                               std::vector<MeshSection>& meshSections)
+        {
+            for (uint32_t i = 0; i < node.mNumMeshes; ++i)
+                meshSections.push_back(sectionsByMesh.at(node.mMeshes[i]));
+
+            for (uint32_t i = 0; i < node.mNumChildren; ++i)
+                generateMeshSectionFromAssimpNode(*node.mChildren[i], sectionsByMesh, meshSections);
+        }
+    }
+
     ModelImporter::ModelImporter(const std::filesystem::path& path)
         : m_path(path)
     {
@@ -32,12 +47,20 @@ namespace Ti::Assets
 
         std::vector<Rendering::StaticMesh::Vertex> vertices;
         std::vector<uint32_t> indices;
+        std::vector<MeshSection> sectionsByMesh(scene->mNumMeshes);
 
         for (uint32_t m = 0; m < scene->mNumMeshes; ++m)
         {
             const aiMesh* mesh = scene->mMeshes[m];
 
-            const uint32_t vertexOffset = static_cast<uint32_t>(vertices.size());
+            if (vertices.size() > static_cast<size_t>(std::numeric_limits<int32_t>::max()) ||
+                indices.size() > std::numeric_limits<uint32_t>::max())
+            {
+                return {};
+            }
+
+            const uint32_t firstIndex = static_cast<uint32_t>(indices.size());
+            const int32_t vertexOffset = static_cast<int32_t>(vertices.size());
 
             // Vertices
             for (uint32_t i = 0; i < mesh->mNumVertices; ++i)
@@ -75,13 +98,34 @@ namespace Ti::Assets
 
                 for (uint32_t j = 0; j < face.mNumIndices; ++j)
                 {
-                    indices.push_back(vertexOffset + face.mIndices[j]);
+                    indices.push_back(face.mIndices[j]);
                 }
             }
+
+            if (vertices.size() > static_cast<size_t>(std::numeric_limits<int32_t>::max()) ||
+                indices.size() > std::numeric_limits<uint32_t>::max())
+            {
+                return {};
+            }
+
+            sectionsByMesh[m] = MeshSection{
+                firstIndex,
+                static_cast<uint32_t>(indices.size() - firstIndex),
+                vertexOffset,
+                mesh->mMaterialIndex,
+            };
         }
 
-        return std::make_shared<StaticMesh>(rhiThread, m_path.stem().string(), std::move(vertices),
-                                            std::move(indices));
+        if (!scene->mRootNode)
+        {
+            return {};
+        }
+
+        std::vector<MeshSection> meshSections;
+        generateMeshSectionFromAssimpNode(*scene->mRootNode, sectionsByMesh, meshSections);
+
+        return std::make_shared<StaticMesh>(rhiThread, m_path.stem().string(), std::move(vertices), std::move(indices),
+                                            std::move(meshSections));
     }
 
 } // namespace Ti::Assets

@@ -82,6 +82,8 @@ namespace Ti::Rendering
 
     void RhiThread::consumeCommands()
     {
+        std::scoped_lock _(m_lock);
+
         for (auto& f : m_rhiCommands)
             f(*this);
         m_rhiCommands.clear();
@@ -89,6 +91,8 @@ namespace Ti::Rendering
 
     void RhiThread::consumeOnRecordRhiCommands()
     {
+        std::scoped_lock _(m_lock);
+
         for (auto& f : m_rhiCommandOnRecord)
             f(getDevice(), m_cmdList);
         m_rhiCommandOnRecord.clear();

@@ -4,6 +4,7 @@
 #include <functional>
 #include <utility>
 #include <vector>
+#include <mutex>
 
 #include <Titanium/TitaniumHeader.hpp>
 
@@ -57,6 +58,7 @@ namespace Ti::Rendering
 
         void pushRhiCommand(RhiCommand rhiCommand)
         {
+            std::scoped_lock _(m_lock);
             m_rhiCommands.push_back(std::move(rhiCommand));
         }
 
@@ -64,6 +66,7 @@ namespace Ti::Rendering
 
         void pushOnRecordCommand(RhiOnRecordCommand rhiCommand)
         {
+            std::scoped_lock _(m_lock);
             m_rhiCommandOnRecord.push_back(std::move(rhiCommand));
         }
 
@@ -81,6 +84,10 @@ namespace Ti::Rendering
         TiRHI::SwapChain m_swapChain;
 
         TiRHI::CommandList m_cmdList;
+
+        // TODO to remove
+        // USE lock free
+        std::mutex m_lock;
 
         // should be double buffered
         std::vector<RhiCommand> m_rhiCommands;

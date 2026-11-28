@@ -6,6 +6,7 @@ set(SOURCES
     AssetReference.hpp
     Image.cpp
     Image.hpp
+    MeshSection.hpp
     ModelImporter.cpp
     ModelImporter.hpp
     StaticMesh.cpp

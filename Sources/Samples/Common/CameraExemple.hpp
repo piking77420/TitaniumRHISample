@@ -4,6 +4,9 @@
 #include <Common/Exemple.hpp>
 #include <Common/CameraController.hpp>
 #include <Core/Camera.hpp>
+#include <Assets/AssetReference.hpp>
+#include <Assets/StaticMesh.hpp>
+#include <future>
 
 namespace Ti::Common
 {
@@ -43,6 +46,8 @@ namespace Ti::Common
         void setupDrawSceneViewPipeline();
 
         void drawRHIInformation();
+
+        std::future<Assets::AssetPtr<Assets::StaticMesh>> loadAsyncStaticMesh(const std::filesystem::path& path);
     };
 
 } // namespace Ti::Common

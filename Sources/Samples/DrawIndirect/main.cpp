@@ -60,12 +60,8 @@ public:
         , m_meshSet(getDevice())
         , m_meshPipeline(getDevice())
     {
-        const fs::path meshPath = fs::path(TITANIUM_RESOURCE_DIR) / "stanford_dragon_vrip.glb";
-        m_staticMesh = Ti::Assets::ModelImporter(meshPath).makeStaticMesh(getRhiThread());
-        if (!m_staticMesh)
-        {
-            TI_LOG_FATAL(Plateform, "Failed to load mesh {}", meshPath.generic_string());
-        }
+        const fs::path meshPath = fs::path(TITANIUM_RESOURCE_DIR) / "Sponza/glTF/Sponza.gltf";
+        m_meshToLoad = loadAsyncStaticMesh(meshPath);
 
         setupSceneRenderPass();
         setupTexture();
@@ -75,6 +71,15 @@ public:
     }
 
 protected:
+    enum struct DrawDriveMethod
+    {
+        Cpu,
+        CpuIndirect,
+        GpuIndirect,
+    } m_drawDriveMethod = DrawDriveMethod::Cpu;
+
+    std::optional<std::future<Ti::Assets::AssetPtr<Ti::Assets::StaticMesh>>> m_meshToLoad;
+
     Ti::Assets::AssetPtr<Ti::Assets::StaticMesh> m_staticMesh;
 
     TiRHI::Texture m_depthTexture;
@@ -107,12 +112,29 @@ protected:
     {
         CameraExemple::onUpdate();
 
-        static std::string windowName = [&]()
-        { return std::string(getName()) + " " + std::string(TiRHI::toString(getRHI().getApi())); }();
-        ImGui::Begin(windowName.c_str());
-        ImGui::DragFloat3("Postion", reinterpret_cast<float*>(&m_meshPosition));
+        if (m_meshToLoad && m_meshToLoad->valid() && m_meshToLoad->valid() &&
+            m_meshToLoad->wait_for(0ms) == std::future_status::ready)
+        {
+            m_staticMesh = m_meshToLoad->get();
+            m_meshToLoad.reset();
+        }
+
+        ImGui::Begin(std::string(getName()).c_str());
+
+        // Draw Method
+        constexpr const char* drawMethods[] = {"CPU", "CPU Indirect", "GPU Indirect"};
+        int currentMethod = static_cast<int>(m_drawDriveMethod);
+        if (ImGui::Combo("Draw Method", &currentMethod, drawMethods, IM_ARRAYSIZE(drawMethods)))
+        {
+            m_drawDriveMethod = static_cast<DrawDriveMethod>(currentMethod);
+        }
+        ImGui::Separator();
+
+        // Mesh transform
+        ImGui::DragFloat3("Position", reinterpret_cast<float*>(&m_meshPosition));
         ImGui::DragFloat3("Rotation", reinterpret_cast<float*>(&m_meshRotation));
         ImGui::DragFloat3("Scaling", reinterpret_cast<float*>(&m_meshScaling));
+
         ImGui::End();
     }
 
@@ -163,17 +185,37 @@ protected:
             TiRHI::Rect2D scissors;
             scissors.setOffset({0, 0}).setExtend(getSwapChain().getExtend());
             cmd.setScissors(scissors);
-            if (std::shared_ptr<Ti::Rendering::StaticMesh> renderStaticMesh = m_staticMesh->getStaticMesh())
-            {
-                if (std::optional<Ti::Rendering::StaticMesh::DrawCommand> drawCommand =
-                        renderStaticMesh->toDrawCommand())
-                {
-                    cmd.bindPipeline(m_meshPipeline);
-                    cmd.bindDescriptorSet(m_meshSet, 0);
-                    cmd.bindVertexBuffer(0, 0, *drawCommand->vertexBuffer);
-                    cmd.bindIndexBuffer(*drawCommand->indexBuffer, 0, drawCommand->indexType);
 
-                    cmd.drawIndexed(static_cast<uint32_t>(drawCommand->indexCount), 1, 0, 0, 0);
+            if (m_staticMesh)
+            {
+                switch (m_drawDriveMethod)
+                {
+                case DrawIndirect::DrawDriveMethod::Cpu:
+                {
+                    if (std::shared_ptr<Ti::Rendering::StaticMesh> renderStaticMesh = m_staticMesh->getStaticMesh())
+                    {
+                        if (std::optional<Ti::Rendering::StaticMesh::DrawCommand> drawCommand =
+                                renderStaticMesh->toDrawCommand())
+                        {
+                            cmd.bindPipeline(m_meshPipeline);
+                            cmd.bindDescriptorSet(m_meshSet, 0);
+                            cmd.bindVertexBuffer(0, 0, *drawCommand->vertexBuffer);
+                            cmd.bindIndexBuffer(*drawCommand->indexBuffer, 0, drawCommand->indexType);
+
+                            for (const Ti::Assets::MeshSection& section : m_staticMesh->getSections())
+                            {
+                                cmd.drawIndexed(section.indexCount, 1, section.firstIndex, section.vertexOffset, 0);
+                            }
+                        }
+                    }
+                }
+                break;
+                case DrawIndirect::DrawDriveMethod::CpuIndirect:
+                    break;
+                case DrawIndirect::DrawDriveMethod::GpuIndirect:
+                    break;
+                default:
+                    break;
                 }
             }
 
